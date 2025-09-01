@@ -56,9 +56,7 @@ async def run_app():
                         except (ValueError, TypeError):
                             print(f"Using channel username: {channel_id}")
                             pass
-                        await send_telegram_file(
-                            channel_id, downloaded_file_path, post_text
-                        )
+                        await send_telegram_file(channel_id, downloaded_file_path, post_text)
 
                         print(f"Cleaning up downloaded file: {downloaded_file_path}")
                         os.remove(downloaded_file_path)
