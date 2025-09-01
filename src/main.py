@@ -1,9 +1,9 @@
 import asyncio
 import os
 import time
-from src.vk_client import get_vk_wall
-from src.downloader import download_video
-from src.telegram_client import send_telegram_message
+from .vk_client import get_vk_wall
+from .downloader import download_video
+from .telegram_client import send_telegram_message
 
 LAST_POST_ID_FILE = "last_post_id.txt"
 

@@ -30,7 +30,7 @@
 ## Запуск
 
     ```bash
-    uv run python src/main.py
+    uv run python -m src.main
     ```
 
 Скрипт будет проверять наличие новых постов каждые 60 секунд.
