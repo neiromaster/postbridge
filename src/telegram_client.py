@@ -1,17 +1,9 @@
-import os
 import sys
 import time
 from pyrogram import Client
-from dotenv import load_dotenv
+from .config import TELEGRAM_API_ID, TELEGRAM_API_HASH
 
-load_dotenv()
-
-API_ID = os.getenv("TELEGRAM_API_ID")
-API_HASH = os.getenv("TELEGRAM_API_HASH")
 SESSION_NAME = "user_session"
-
-if not API_ID or not API_HASH:
-    raise ValueError("TELEGRAM_API_ID and TELEGRAM_API_HASH must be set in .env file")
 
 
 class Progress:
@@ -40,7 +32,7 @@ class Progress:
 async def send_telegram_file(channel, file_path, caption):
     """Connects and sends a file to a Telegram channel via a user account."""
     print("Initializing Telegram client...")
-    app = Client(SESSION_NAME, api_id=int(API_ID), api_hash=API_HASH)
+    app = Client(SESSION_NAME, api_id=int(TELEGRAM_API_ID), api_hash=TELEGRAM_API_HASH)
     print("Connecting to Telegram...")
     async with app:
         print("Connection successful. Sending file...")

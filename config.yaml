@@ -1,0 +1,45 @@
+# Main application settings
+app:
+  # Time to wait between checking for new posts, in seconds
+  wait_time_seconds: 60
+
+# VKontakte settings
+vk:
+  # Short name or ID of the community wall to monitor
+  domain: "community_short_name_or_id"
+  # Number of posts to fetch in each check
+  post_count: 10
+
+# Telegram settings
+telegram:
+  # Your channel username (e.g., @channel_name) or numeric ID
+  channel_id: "your_channel_id_or_username"
+
+# Video downloader settings
+downloader:
+  # Browser to use for importing cookies (e.g., chrome, firefox, edge)
+  browser: "edge"
+  # Directory to save downloaded videos
+  output_path: "downloads"
+  # yt-dlp options for downloading
+  yt_dlp_opts:
+    # Number of fragments to download concurrently
+    concurrent_fragment_downloads: 5
+    # Skip unavailable fragments
+    skip_unavailable_fragments: false
+    # Number of retries for each fragment
+    fragment_retries: 50
+    # Total number of retries for the download
+    retries: 50
+    # External downloader to use
+    external_downloader:
+      default: "aria2c"
+      dash: "native"
+      m3u8: "native"
+    # Arguments for the external downloader
+    external_downloader_args:
+      aria2c:
+        - "-x"
+        - "5"
+        - "-s"
+        - "5"

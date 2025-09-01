@@ -1,9 +1,6 @@
-import os
 import re
 import vk_api
-from dotenv import load_dotenv
-
-load_dotenv()
+from .config import VK_SERVICE_TOKEN, VK_DOMAIN, VK_POST_COUNT
 
 
 def clean_post_text(text):
@@ -13,15 +10,11 @@ def clean_post_text(text):
 
 def get_vk_wall():
     """Get posts from a VK wall."""
-    token = os.getenv("VK_SERVICE_TOKEN")
-    domain = os.getenv("VK_DOMAIN")
-    if not token or not domain:
-        raise ValueError("VK_SERVICE_TOKEN and VK_DOMAIN must be set in .env file")
 
-    print(f"Fetching posts from VK wall: {domain}...")
-    vk_session = vk_api.VkApi(token=token)
+    print(f"Fetching posts from VK wall: {VK_DOMAIN}...")
+    vk_session = vk_api.VkApi(token=VK_SERVICE_TOKEN)
     vk = vk_session.get_api()
-    response = vk.wall.get(domain=domain, count=10)
+    response = vk.wall.get(domain=VK_DOMAIN, count=VK_POST_COUNT)
     print(f"Found {len(response['items'])} posts.")
 
     posts = response["items"]

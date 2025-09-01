@@ -6,6 +6,7 @@ from .vk_client import get_vk_wall
 from .downloader import download_video
 from .telegram_client import send_telegram_file
 from .state_manager import get_last_post_id, set_last_post_id
+from .config import TELEGRAM_CHANNEL_ID, WAIT_TIME_SECONDS
 
 
 async def run_app():
@@ -23,10 +24,9 @@ async def run_app():
                 print("No new posts found.")
             else:
                 print(f"Found {len(new_posts)} new posts.")
-                # Process posts from oldest to newest to maintain order
                 for post in sorted(new_posts, key=lambda x: x["id"]):
                     print(f"\nProcessing post ID: {post['id']}...")
-                    post_text = post["text"]
+                    post_text = post.get("text", "")
                     video_url = None
 
                     if "attachments" in post:
@@ -48,9 +48,8 @@ async def run_app():
                         downloaded_file_path = download_video(video_url)
 
                         print("Preparing to send to Telegram...")
-                        channel_id = os.getenv("TELEGRAM_CHANNEL_ID")
+                        channel_id = TELEGRAM_CHANNEL_ID
                         try:
-                            # Convert to int if it's a numeric ID
                             channel_id = int(channel_id)
                             print(f"Using numeric channel ID: {channel_id}")
                         except (ValueError, TypeError):
@@ -62,7 +61,6 @@ async def run_app():
                         os.remove(downloaded_file_path)
                         print("Cleanup complete.")
 
-                    # Update last known ID after each post is processed
                     set_last_post_id(post["id"])
                     last_known_id = post["id"]
                     print(f"Updated last known post ID to: {last_known_id}")
@@ -73,5 +71,5 @@ async def run_app():
             traceback.print_exc()
             print("-----------------")
 
-        print("\n--- Cycle finished. Waiting for 60 seconds... ---")
-        time.sleep(60)
+        print(f"\n--- Cycle finished. Waiting for {WAIT_TIME_SECONDS} seconds... ---")
+        time.sleep(WAIT_TIME_SECONDS)
