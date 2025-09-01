@@ -96,5 +96,7 @@ cython_debug/
 
 # Project-specific
 dist/
+downloads/
+cookies.txt
 
 # End of https://www.toptal.com/developers/gitignore/api/python
