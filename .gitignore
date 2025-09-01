@@ -98,5 +98,6 @@ cython_debug/
 dist/
 downloads/
 cookies.txt
+last_post_id.txt
 
 # End of https://www.toptal.com/developers/gitignore/api/python
