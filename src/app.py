@@ -1,24 +1,15 @@
-import asyncio
 import os
 import time
+import traceback
+
 from .vk_client import get_vk_wall
 from .downloader import download_video
-from .telegram_client import send_telegram_message
+from .telegram_client import send_telegram_file
+from .state_manager import get_last_post_id, set_last_post_id
 
-LAST_POST_ID_FILE = "last_post_id.txt"
 
-def get_last_post_id():
-    if not os.path.exists(LAST_POST_ID_FILE):
-        return 0
-    with open(LAST_POST_ID_FILE, "r") as f:
-        return int(f.read().strip())
-
-def set_last_post_id(post_id):
-    with open(LAST_POST_ID_FILE, "w") as f:
-        f.write(str(post_id))
-
-async def main():
-    """Main function to run the application logic."""
+async def run_app():
+    """Runs the main application logic."""
     print("Starting vk-to-tg bot...")
     last_known_id = get_last_post_id()
     print(f"Last known post ID: {last_known_id}")
@@ -31,7 +22,6 @@ async def main():
             if not new_posts:
                 print("No new posts found.")
             else:
-                # Process newest post first
                 for post in sorted(new_posts, key=lambda x: x["id"], reverse=True):
                     print(f"Found new post: {post['id']}")
                     post_text = post["text"]
@@ -44,7 +34,7 @@ async def main():
                                 video_id = attachment["video"]["id"]
                                 access_key = attachment["video"].get("access_key", "")
                                 video_url = f"https://vk.com/video{owner_id}_{video_id}?access_key={access_key}"
-                                break # Process first video only
+                                break
 
                     if video_url:
                         print(f"Downloading video from {video_url}...")
@@ -52,13 +42,16 @@ async def main():
                         print(f"Video downloaded to {downloaded_file_path}")
 
                         print("Sending to Telegram...")
-                        await send_telegram_message(downloaded_file_path, post_text)
+                        channel_id = os.getenv("TELEGRAM_CHANNEL_ID")
+                        try:
+                            channel_id = int(channel_id)
+                        except (ValueError, TypeError):
+                            pass
+                        await send_telegram_file(channel_id, downloaded_file_path, post_text)
                         print("Post sent to Telegram.")
 
-                        # Clean up downloaded file
                         os.remove(downloaded_file_path)
 
-                    # Update last known ID to the newest post ID from this batch
                     newest_id_in_batch = max(p["id"] for p in new_posts)
                     set_last_post_id(newest_id_in_batch)
                     last_known_id = newest_id_in_batch
@@ -66,9 +59,9 @@ async def main():
 
         except Exception as e:
             print(f"An error occurred: {e}")
+            print("--- TRACEBACK ---")
+            traceback.print_exc()
+            print("-----------------")
 
         print("Waiting for 60 seconds before next check...")
         time.sleep(60)
-
-if __name__ == "__main__":
-    asyncio.run(main())

@@ -2,11 +2,11 @@
 name = "vk-to-tg"
 version = "0.1.0"
 dependencies = [
+    "ruff",
     "vk-api",
     "python-dotenv",
     "yt-dlp",
-    "browser-cookie3",
-    "python-telegram-bot[ext]>=22.3",
+    "telethon",
 ]
 
 [tool.ruff]

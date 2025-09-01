@@ -99,5 +99,7 @@ dist/
 downloads/
 cookies.txt
 last_post_id.txt
+*.session
+*.session-journal
 
 # End of https://www.toptal.com/developers/gitignore/api/python
