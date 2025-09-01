@@ -15,7 +15,23 @@ def download_video(video_url, output_path="downloads"):
     ydl_opts = {
         "outtmpl": os.path.join(output_path, "%(id)s.%(ext)s"),
         "cookies-from-browser": (browser_for_cookies,),
-        "concurrent_fragments": 4,
+        "concurrent_fragment_downloads": 5,
+        "skip_unavailable_fragments": False,
+        "fragment_retries": 50,
+        "retries": 50,
+        "external_downloader": {
+            "default": "aria2c",
+            "dash": "native",
+            "m3u8": "native",
+        },
+        "external_downloader_args": {
+            "aria2c": [
+                "-x",
+                "5",
+                "-s",
+                "5",
+            ],
+        },
         "quiet": True,
         "no_warnings": True,
         "verbose": False,
