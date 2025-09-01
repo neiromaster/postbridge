@@ -1,6 +1,6 @@
 import os
 import sys
-from telethon import TelegramClient
+from pyrogram import Client
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -11,14 +11,6 @@ SESSION_NAME = "user_session"
 
 if not API_ID or not API_HASH:
     raise ValueError("TELEGRAM_API_ID and TELEGRAM_API_HASH must be set in .env file")
-
-print("Initializing Telegram client...")
-
-workers = os.cpu_count()
-print(f"Using {workers} workers for Telegram uploads.")
-client = TelegramClient(SESSION_NAME, int(API_ID), API_HASH, connection_retries=5, retry_delay=1)
-print("Telegram client initialized.")
-
 
 def progress_callback(current, total):
     """Shows a progress bar in the console."""
@@ -32,17 +24,16 @@ def progress_callback(current, total):
 
 async def send_telegram_file(channel, file_path, caption):
     """Connects and sends a file to a Telegram channel via a user account."""
+    print("Initializing Telegram client...")
+    app = Client(SESSION_NAME, api_id=int(API_ID), api_hash=API_HASH)
     print("Connecting to Telegram...")
-    async with client:
+    async with app:
         print("Connection successful. Sending file...")
-        await client.send_file(
-            entity=channel,
-            file=file_path,
+        await app.send_video(
+            chat_id=channel,
+            document=file_path,
             caption=caption,
-            allow_cache=False,
-            part_size_kb=1024,
-            progress_callback=progress_callback,
-            workers=workers
+            progress=progress_callback,
         )
         sys.stdout.write('\n')
         print(f"File '{file_path}' sent successfully to channel '{channel}'.")

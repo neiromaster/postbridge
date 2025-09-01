@@ -1,15 +1,16 @@
 [project]
 name = "vk-to-tg"
 version = "0.1.0"
-requires-python = ">=3.12,<3.14"
+requires-python = ">=3.13,<3.14"
 
 dependencies = [
     "ruff",
     "vk-api",
     "python-dotenv",
     "yt-dlp",
-    "telethon",
+    
     "tgcrypto>=1.2.5",
+    "kurigram>=2.2.9",
 ]
 
 [tool.ruff]
