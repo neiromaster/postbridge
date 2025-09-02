@@ -2,7 +2,7 @@ import asyncio
 import os
 import traceback
 
-from .config import TELEGRAM_CHANNEL_ID, WAIT_TIME_SECONDS
+from .config import TELEGRAM_CHANNEL_IDS, WAIT_TIME_SECONDS
 from .downloader import download_video
 from .state_manager import get_last_post_id, set_last_post_id
 from .telegram_client import send_telegram_file
@@ -40,14 +40,12 @@ async def run_app():
                     if video_url:
                         downloaded_file_path = download_video(video_url)
                         if downloaded_file_path:
-                            channel_id = TELEGRAM_CHANNEL_ID
-                            try:
-                                channel_id = int(channel_id)
-                            except (ValueError, TypeError):
-                                pass
-                            await send_telegram_file(
-                                channel_id, downloaded_file_path, post_text
-                            )
+                            for channel_id in TELEGRAM_CHANNEL_IDS:
+                                try:
+                                    channel_id_int = int(channel_id)
+                                    await send_telegram_file(channel_id_int, downloaded_file_path, post_text)
+                                except (ValueError, TypeError):
+                                    await send_telegram_file(channel_id, downloaded_file_path, post_text)
                             print("🗑️  Удаляю временный файл...")
                             os.remove(downloaded_file_path)
                             print("✅ Файл удален.")

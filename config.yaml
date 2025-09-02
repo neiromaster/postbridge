@@ -6,14 +6,16 @@ app:
 # VKontakte settings
 vk:
   # Short name or ID of the community wall to monitor
-  domain: "community_short_name_or_id"
+  domain: "dublikkk"
   # Number of posts to fetch in each check
   post_count: 10
 
 # Telegram settings
 telegram:
-  # Your channel username (e.g., @channel_name) or numeric ID
-  channel_id: "your_channel_id_or_username"
+  # List of your channel usernames (e.g., @channel_name) or numeric IDs
+  channel_ids:
+  - "@someid"
+  - "@secondid"
 
 # Video downloader settings
 downloader:

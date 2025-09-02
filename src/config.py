@@ -42,7 +42,7 @@ VK_POST_COUNT = VK_CONFIG.get("post_count", 10)
 
 # Telegram settings
 TELEGRAM_CONFIG = config.get("telegram", {})
-TELEGRAM_CHANNEL_ID = TELEGRAM_CONFIG.get("channel_id")
+TELEGRAM_CHANNEL_IDS = TELEGRAM_CONFIG.get("channel_ids", [])
 
 # Downloader settings
 DOWNLOADER_CONFIG = config.get("downloader", {})
@@ -65,8 +65,8 @@ def validate_configuration():
     # Validate values from config.yaml
     if not VK_DOMAIN:
         raise ValueError("The 'domain' key under the 'vk' section is not set in config.yaml")
-    if not TELEGRAM_CHANNEL_ID:
-        raise ValueError("The 'channel_id' key under the 'telegram' section is not set in config.yaml")
+    if not TELEGRAM_CHANNEL_IDS:
+        raise ValueError("The 'channel_ids' key under the 'telegram' section is not set in config.yaml or is empty")
 
 
 validate_configuration()
