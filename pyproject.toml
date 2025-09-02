@@ -24,4 +24,5 @@ select = ["E", "F", "W", "I"]
 dev = [
     "ruff>=0.12.11",
     "pytest",
+    "pyinstaller",
 ]
