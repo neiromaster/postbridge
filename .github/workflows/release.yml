@@ -16,22 +16,27 @@ jobs:
           - label: linux-x64
             runner: ubuntu-latest
             python_arch: x64
+            python_version: '3.12'
             qemu: false
           - label: linux-arm64
             runner: ubuntu-latest
             python_arch: aarch64
+            python_version: '3.11'
             qemu: true
           - label: windows-x64
             runner: windows-latest
             python_arch: x64
+            python_version: '3.12'
             qemu: false
           - label: macos-x64
             runner: macos-14
             python_arch: x64
+            python_version: '3.12'
             qemu: false
           - label: macos-arm64
             runner: macos-14
             python_arch: arm64
+            python_version: '3.12'
             qemu: false
 
     defaults:
@@ -53,7 +58,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ matrix.python_version }}
           architecture: ${{ matrix.python_arch }}
 
       - name: Cache pip
