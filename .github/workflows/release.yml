@@ -10,6 +10,7 @@ jobs:
     name: Build for ${{ matrix.label }}
     runs-on: ${{ matrix.runner }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - label: linux-x64
@@ -63,8 +64,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ matrix.python_arch }}-pip-
 
-      - name: Install uv
-        run: pip install uv==0.4.20
+      - name: Install uv (fixed version)
+        run: pip install --upgrade uv==0.8.14
 
       - name: Cache uv
         uses: actions/cache@v4
@@ -75,10 +76,16 @@ jobs:
             ${{ runner.os }}-${{ matrix.python_arch }}-uv-
 
       - name: Install dependencies
-        run: uv sync --group dev
+        run: |
+          if uv sync --help | grep -q -- '--group'; then
+            uv sync --group dev
+          else
+            echo "⚠️ uv without --group support, install all dependencies"
+            uv sync
+          fi
 
-      - name: Build with PyInstaller
-        run: uv run pyinstaller main.py --onefile --name postbridge-${{ matrix.label }}
+      - name: Build with PyInstaller (debug log)
+        run: uv run pyinstaller main.py --onefile --name postbridge-${{ matrix.label }} --log-level=DEBUG
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -126,9 +133,7 @@ jobs:
               echo "### $title" >> CHANGELOG.md
               while IFS="|" read -r hash subject; do
                 short_hash=$(echo "$hash" | cut -c1-7)
-                
                 commit_link="[$short_hash](${REPO_URL}/commit/${hash})"
-                
                 subject_with_links=$(echo "$subject" | sed -E "s/#([0-9]+)/[#\1](${REPO_URL}\/pull\/\1)/g")
                 echo "- ${subject_with_links} (${commit_link})" >> CHANGELOG.md
               done <<< "$commits"
