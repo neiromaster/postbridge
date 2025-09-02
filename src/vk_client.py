@@ -15,7 +15,9 @@ def clean_post_text(text):
         link = match.group(1)
         text = match.group(2)
 
-        if link.startswith("http://") or link.startswith("https://"):
+        link = link.replace("http://", "https://")
+
+        if link.startswith("https://"):
             return f"[{text}]({link})"
         elif link.startswith("club") or link.startswith("id"):
             return f"[{text}](https://vk.com/{link})"
@@ -46,7 +48,7 @@ def get_vk_wall():
     for post in posts:
         if "text" in post:
             post["text"] = clean_post_text(post["text"])
-
+            
     return posts
 
 
