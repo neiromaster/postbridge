@@ -18,26 +18,31 @@ jobs:
             python_arch: x64
             python_version: '3.12'
             qemu: false
+            docker: false
           - label: linux-arm64
             runner: ubuntu-latest
             python_arch: aarch64
-            python_version: '3.11'
+            python_version: '3.12'
             qemu: true
+            docker: true
           - label: windows-x64
             runner: windows-latest
             python_arch: x64
             python_version: '3.12'
             qemu: false
+            docker: false
           - label: macos-x64
             runner: macos-14
             python_arch: x64
             python_version: '3.12'
             qemu: false
+            docker: false
           - label: macos-arm64
             runner: macos-14
             python_arch: arm64
             python_version: '3.12'
             qemu: false
+            docker: false
 
     defaults:
       run:
@@ -49,19 +54,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up QEMU for cross-compilation
+      - name: Set up QEMU
         if: matrix.qemu == true
         uses: docker/setup-qemu-action@v3
         with:
           platforms: linux/arm64
 
       - name: Set up Python
+        if: matrix.docker == false
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python_version }}
           architecture: ${{ matrix.python_arch }}
 
       - name: Cache pip
+        if: matrix.docker == false
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
@@ -70,9 +77,11 @@ jobs:
             ${{ runner.os }}-${{ matrix.python_arch }}-pip-
 
       - name: Install uv (fixed version)
+        if: matrix.docker == false
         run: pip install --upgrade uv==0.8.14
 
       - name: Cache uv
+        if: matrix.docker == false
         uses: actions/cache@v4
         with:
           path: ~/.cache/uv
@@ -81,6 +90,7 @@ jobs:
             ${{ runner.os }}-${{ matrix.python_arch }}-uv-
 
       - name: Install dependencies
+        if: matrix.docker == false
         run: |
           if uv sync --help | grep -q -- '--group'; then
             uv sync --group dev
@@ -90,7 +100,24 @@ jobs:
           fi
 
       - name: Build with PyInstaller (debug log)
+        if: matrix.docker == false
         run: uv run pyinstaller main.py --onefile --name postbridge-${{ matrix.label }} --log-level=DEBUG
+
+      - name: Build in arm64 Docker
+        if: matrix.docker == true
+        run: |
+          docker run --rm --platform linux/arm64 \
+            -v $PWD:/app -w /app \
+            python:${{ matrix.python_version }} \
+            bash -c "
+              pip install uv==0.8.14 &&
+              if uv sync --help | grep -q -- '--group'; then
+                uv sync --group dev
+              else
+                uv sync
+              fi &&
+              uv run pyinstaller main.py --onefile --name postbridge-${{ matrix.label }} --log-level=DEBUG
+            "
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
