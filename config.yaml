@@ -9,6 +9,8 @@ vk:
   domain: "dublikkk"
   # Number of posts to fetch in each check
   post_count: 10
+  # Source of posts: "wall" for public posts, "donut" for VK Donut posts
+  post_source: "wall"
 
 # Telegram settings
 telegram:

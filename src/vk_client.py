@@ -1,6 +1,6 @@
 import re
 import vk_api
-from .config import VK_SERVICE_TOKEN, VK_DOMAIN, VK_POST_COUNT
+from .config import VK_SERVICE_TOKEN, VK_DOMAIN, VK_POST_COUNT, VK_POST_SOURCE
 
 
 def clean_post_text(text):
@@ -11,10 +11,19 @@ def clean_post_text(text):
 def get_vk_wall():
     """Get posts from a VK wall."""
 
-    print(f"🔍 Собираю посты со стены: {VK_DOMAIN}...")
+    params = {
+        "domain": VK_DOMAIN,
+        "count": VK_POST_COUNT,
+    }
+    if VK_POST_SOURCE == "donut":
+        params["filter"] = "donut"
+        print(f"🔍 Собираю посты из VK Donut: {VK_DOMAIN}...")
+    else:
+        print(f"🔍 Собираю посты со стены: {VK_DOMAIN}...")
+
     vk_session = vk_api.VkApi(token=VK_SERVICE_TOKEN)
     vk = vk_session.get_api()
-    response = vk.wall.get(domain=VK_DOMAIN, count=VK_POST_COUNT)
+    response = vk.wall.get(**params)
 
     posts = response["items"]
     for post in posts:

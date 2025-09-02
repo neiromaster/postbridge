@@ -39,6 +39,7 @@ WAIT_TIME_SECONDS = APP_CONFIG.get("wait_time_seconds", 60)
 VK_CONFIG = config.get("vk", {})
 VK_DOMAIN = VK_CONFIG.get("domain")
 VK_POST_COUNT = VK_CONFIG.get("post_count", 10)
+VK_POST_SOURCE = VK_CONFIG.get("post_source", "wall")
 
 # Telegram settings
 TELEGRAM_CONFIG = config.get("telegram", {})
@@ -67,6 +68,8 @@ def validate_configuration():
         raise ValueError("The 'domain' key under the 'vk' section is not set in config.yaml")
     if not TELEGRAM_CHANNEL_IDS:
         raise ValueError("The 'channel_ids' key under the 'telegram' section is not set in config.yaml or is empty")
+    if VK_POST_SOURCE not in ["wall", "donut"]:
+        raise ValueError("The 'post_source' key under the 'vk' section in config.yaml must be either 'wall' or 'donut'")
 
 
 validate_configuration()
