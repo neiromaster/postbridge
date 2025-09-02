@@ -1,7 +1,7 @@
 # Main application settings
 app:
   # Time to wait between checking for new posts, in seconds
-  wait_time_seconds: 60
+  wait_time_seconds: 3600
 
 # VKontakte settings
 vk:
@@ -18,7 +18,7 @@ telegram:
 # Video downloader settings
 downloader:
   # Browser to use for importing cookies (e.g., chrome, firefox, edge)
-  browser: "edge"
+  browser: "firefox"
   # Directory to save downloaded videos
   output_path: "downloads"
   # yt-dlp options for downloading
@@ -39,7 +39,7 @@ downloader:
     # Arguments for the external downloader
     external_downloader_args:
       aria2c:
-        - "-x"
-        - "5"
-        - "-s"
-        - "5"
+      - "-x"
+      - "5"
+      - "-s"
+      - "5"
