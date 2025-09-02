@@ -104,17 +104,46 @@ jobs:
         with:
           path: artifacts/
 
-      - name: Generate changelog
+      - name: Generate grouped changelog
         id: changelog
         run: |
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
           if [ -n "$PREV_TAG" ]; then
+            RANGE="${PREV_TAG}..HEAD"
             echo "## Changes since $PREV_TAG" > CHANGELOG.md
-            git log --pretty=format:"- %s" ${PREV_TAG}..HEAD >> CHANGELOG.md
           else
+            RANGE="HEAD"
             echo "## Initial release" > CHANGELOG.md
-            git log --pretty=format:"- %s" >> CHANGELOG.md
           fi
+
+          echo "" >> CHANGELOG.md
+
+          group() {
+            local title="$1"
+            local pattern="$2"
+            local commits=$(git log --pretty=format:"- %s" $RANGE | grep -E "$pattern" || true)
+            if [ -n "$commits" ]; then
+              echo "### $title" >> CHANGELOG.md
+              echo "$commits" >> CHANGELOG.md
+              echo "" >> CHANGELOG.md
+            fi
+          }
+
+          group "✨ Features" "^feat"
+          group "🐛 Fixes" "^fix"
+          group "📚 Documentation" "^docs"
+          group "♻ Refactoring" "^refactor"
+          group "🧪 Tests" "^test"
+          group "⚙ Build" "^build"
+          group "🔧 Chore" "^chore"
+
+          OTHER=$(git log --pretty=format:"- %s" $RANGE | grep -Ev "^(feat|fix|docs|refactor|test|build|chore)" || true)
+          if [ -n "$OTHER" ]; then
+            echo "### Other changes" >> CHANGELOG.md
+            echo "$OTHER" >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+          fi
+
           echo "changelog<<EOF" >> $GITHUB_OUTPUT
           cat CHANGELOG.md >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
