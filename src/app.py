@@ -1,3 +1,4 @@
+import asyncio
 import os
 import time
 import traceback
@@ -72,4 +73,4 @@ async def run_app():
             print("-----------------")
 
         print(f"\n--- Cycle finished. Waiting for {WAIT_TIME_SECONDS} seconds... ---")
-        time.sleep(WAIT_TIME_SECONDS)
+        await asyncio.sleep(WAIT_TIME_SECONDS)
