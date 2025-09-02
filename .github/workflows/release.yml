@@ -45,7 +45,7 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: postbridge-${{ matrix.os }}-${{ matrix.arch }}
+        name: postbridge-binaries
         path: dist/postbridge-${{ matrix.os }}-${{ matrix.arch }}*
 
   release:
@@ -58,11 +58,13 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
+          name: postbridge-binaries
           path: artifacts
+          merge-multiple: true
 
       - name: Create Release and Upload Artifacts
         uses: softprops/action-gh-release@v1
         with:
-          files: artifacts/*/*
+          files: artifacts/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
