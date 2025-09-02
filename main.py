@@ -1,4 +1,5 @@
 import asyncio
+
 from src.app import run_app
 
 if __name__ == "__main__":

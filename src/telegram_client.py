@@ -1,7 +1,9 @@
 import sys
 import time
+
 from pyrogram import Client
-from .config import TELEGRAM_API_ID, TELEGRAM_API_HASH
+
+from .config import TELEGRAM_API_HASH, TELEGRAM_API_ID
 
 SESSION_NAME = "user_session"
 

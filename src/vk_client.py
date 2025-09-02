@@ -1,6 +1,7 @@
 import vk_api
-from .config import VK_SERVICE_TOKEN, VK_DOMAIN, VK_POST_COUNT, VK_POST_SOURCE
+
 from .cleaner import normalize_links
+from .config import VK_DOMAIN, VK_POST_COUNT, VK_POST_SOURCE, VK_SERVICE_TOKEN
 
 
 def get_vk_wall():

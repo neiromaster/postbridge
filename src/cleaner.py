@@ -1,6 +1,7 @@
 import re
-import emoji
 from urllib.parse import urlparse
+
+import emoji
 
 PATTERN_BRACKET_LINK = r"\[([^\]|]+)\|([^\]]+)\]"
 PATTERN_PROTOCOL_URL = r"https?://[^\s\]]+"
