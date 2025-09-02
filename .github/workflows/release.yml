@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build binaries
+    name: Build for ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -22,49 +22,52 @@ jobs:
             arch: x64
           - os: macos-14
             arch: arm64
-        python-version: ['3.13']
+
+    defaults:
+      run:
+        shell: bash
 
     steps:
-    - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-        architecture: ${{ matrix.arch }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
 
-    - name: Install uv
-      run: pip install uv
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
-    - name: Install dependencies
-      run: uv sync --group dev
+      - name: Add uv to PATH
+        run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-    - name: Build with pyinstaller
-      run: uv run pyinstaller main.py --onefile --name postbridge-${{ matrix.os }}-${{ matrix.arch }}
+      - name: Install dependencies
+        run: uv sync --group dev
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: postbridge-binaries
-        path: dist/postbridge-${{ matrix.os }}-${{ matrix.arch }}*
+      - name: Build with PyInstaller
+        run: uv run pyinstaller main.py --onefile --name postbridge-${{ matrix.os }}
 
-  release:
-    name: Create Release
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: postbridge-${{ matrix.os }}
+          path: dist/*
+
+  create-release:
+    name: Create GitHub Release
     needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
+
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: postbridge-binaries
-          path: artifacts
-          merge-multiple: true
-
-      - name: Create Release and Upload Artifacts
-        uses: softprops/action-gh-release@v1
+          path: artifacts/
+      
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          files: artifacts/*/*
