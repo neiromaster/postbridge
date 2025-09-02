@@ -41,7 +41,7 @@ jobs:
               while IFS="|" read -r hash subject; do
                 short_hash=$(echo "$hash" | cut -c1-7)
                 commit_link="[$short_hash](${REPO_URL}/commit/${hash})"
-                subject_with_links=$(echo "$subject" | sed -E "s/#([0-9]+)/[#\1](${REPO_URL}\/pull\/\1)/g")
+                subject_with_links=$(echo "$subject" | sed -E "s|#([0-9]+)|[#\1](${REPO_URL}/pull/\1)|g")
                 echo "- ${subject_with_links} (${commit_link})" >> CHANGELOG.md
               done <<< "$commits"
               echo "" >> CHANGELOG.md
@@ -62,7 +62,7 @@ jobs:
             while IFS="|" read -r hash subject; do
               short_hash=$(echo "$hash" | cut -c1-7)
               commit_link="[$short_hash](${REPO_URL}/commit/${hash})"
-              subject_with_links=$(echo "$subject" | sed -E "s/#([0-9]+)/[#\1](${REPO_URL}\/pull\/\1)/g")
+              subject_with_links=$(echo "$subject" | sed -E "s|#([0-9]+)|[#\1](${REPO_URL}/pull/\1)|g")
               echo "- ${subject_with_links} (${commit_link})" >> CHANGELOG.md
             done <<< "$OTHER"
             echo "" >> CHANGELOG.md
