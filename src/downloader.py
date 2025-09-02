@@ -22,7 +22,7 @@ def download_video(video_url, retries=3, delay=10):
     ydl_opts.update(
         {
             "outtmpl": os.path.join(DOWNLOADER_OUTPUT_PATH, "%(id)s.%(ext)s"),
-            "cookies-from-browser": DOWNLOADER_BROWSER,
+            "cookiesfrombrowser": (DOWNLOADER_BROWSER,),
             "quiet": True,
             "no_warnings": True,
             "verbose": False,
