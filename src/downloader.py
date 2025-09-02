@@ -1,4 +1,5 @@
 import os
+import time
 import yt_dlp
 from .config import (
     DOWNLOADER_BROWSER,
@@ -7,8 +8,11 @@ from .config import (
 )
 
 
-def download_video(video_url):
-    """Download a video from a given URL using yt-dlp's browser cookie import."""
+def download_video(video_url, retries=3, delay=10):
+    """
+    Download a video from a given URL using yt-dlp's browser cookie import,
+    with a retry mechanism.
+    """
     if not os.path.exists(DOWNLOADER_OUTPUT_PATH):
         os.makedirs(DOWNLOADER_OUTPUT_PATH)
 
@@ -23,13 +27,20 @@ def download_video(video_url):
         }
     )
 
-    print("📥 Скачиваю видео...")
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+    for i in range(retries):
+        print(f"📥 Скачиваю видео (попытка {i + 1}/{retries})...")
         try:
-            info = ydl.extract_info(video_url, download=True)
-            downloaded_file = ydl.prepare_filename(info)
-            print(f"✅ Видео скачано: {downloaded_file}")
-            return downloaded_file
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(video_url, download=True)
+                downloaded_file = ydl.prepare_filename(info)
+                print(f"✅ Видео скачано: {downloaded_file}")
+                return downloaded_file
         except Exception as e:
             print(f"❌ Ошибка скачивания: {e}")
-            return None
+            if i < retries - 1:
+                current_delay = delay * (2**i)
+                print(f"⏳ Пауза {current_delay} секунд перед следующей попыткой...")
+                time.sleep(current_delay)
+
+    print(f"❌ Не удалось скачать видео после {retries} попыток.")
+    return None
