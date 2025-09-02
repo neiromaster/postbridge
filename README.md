@@ -1,4 +1,4 @@
-# VK-to-TG Video Poster
+# Postbridge
 
 This script monitors a VK community wall for new posts, downloads any attached videos, and publishes them to a Telegram channel using your personal account (via Telethon) to support files up to 2 GB.
 
@@ -52,4 +52,4 @@ This script monitors a VK community wall for new posts, downloads any attached v
 
 ### Important: First run
 
-On the first run, `Telethon` will ask you to enter your phone number, a code from Telegram, and possibly your two-factor authentication password directly in the console. After successful authorization, a `user_session.session` file will be created, and subsequent logins will be automatic.
+On the first run, `kurigram` will ask you to enter your phone number, a code from Telegram, and possibly your two-factor authentication password directly in the console. After successful authorization, a `user_session.session` file will be created, and subsequent logins will be automatic.

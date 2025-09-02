@@ -1,12 +1,12 @@
 # Main application settings
 app:
   # Time to wait between checking for new posts, in seconds
-  wait_time_seconds: 3600
+  wait_time_seconds: 600
 
 # VKontakte settings
 vk:
   # Short name or ID of the community wall to monitor
-  domain: "dublikkk"
+  domain: "somechannel"
   # Number of posts to fetch in each check
   post_count: 10
   # Source of posts: "wall" for public posts, "donut" for VK Donut posts
