@@ -40,8 +40,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      # Устанавливаем QEMU только если нужно
       - name: Set up QEMU for cross-compilation
         if: matrix.qemu == true
         uses: docker/setup-qemu-action@v3
@@ -54,8 +55,24 @@ jobs:
           python-version: '3.12'
           architecture: ${{ matrix.python_arch }}
 
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-${{ matrix.python_arch }}-pip-${{ hashFiles('**/requirements*.txt', '**/pyproject.toml', '**/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.python_arch }}-pip-
+
       - name: Install uv
         run: pip install uv==0.4.20
+
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-${{ matrix.python_arch }}-uv-${{ hashFiles('**/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.python_arch }}-uv-
 
       - name: Install dependencies
         run: uv sync --group dev
@@ -77,12 +94,34 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts/
-      
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            echo "## Changes since $PREV_TAG" > CHANGELOG.md
+            git log --pretty=format:"- %s" ${PREV_TAG}..HEAD >> CHANGELOG.md
+          else
+            echo "## Initial release" > CHANGELOG.md
+            git log --pretty=format:"- %s" >> CHANGELOG.md
+          fi
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          cat CHANGELOG.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
+          body: ${{ steps.changelog.outputs.changelog }}
           files: artifacts/**/*
+          make_latest: true
