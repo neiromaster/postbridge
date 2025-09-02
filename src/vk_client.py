@@ -1,30 +1,6 @@
-import re
 import vk_api
 from .config import VK_SERVICE_TOKEN, VK_DOMAIN, VK_POST_COUNT, VK_POST_SOURCE
-
-
-def clean_post_text(text):
-    """
-    Cleans the post text by converting VK-style links to Markdown format.
-    - [link|text] -> [text](link) for valid URLs.
-    - [club123|text] -> [text](https://vk.com/club123) for internal VK links.
-    - Other [..|..] constructs are cleaned to just the text part.
-    """
-
-    def replacer(match):
-        link = match.group(1)
-        text = match.group(2)
-
-        link = link.replace("http://", "https://")
-
-        if link.startswith("https://"):
-            return f"[{text}]({link})"
-        elif link.startswith("club") or link.startswith("id"):
-            return f"[{text}](https://vk.com/{link})"
-        else:
-            return text
-
-    return re.sub(r"\[([^\]|]+)\|([^\]]+)\]", replacer, text)
+from .cleaner import normalize_links
 
 
 def get_vk_wall():
@@ -47,8 +23,8 @@ def get_vk_wall():
     posts = response["items"]
     for post in posts:
         if "text" in post:
-            post["text"] = clean_post_text(post["text"])
-            
+            post["text"] = normalize_links(post["text"])
+
     return posts
 
 

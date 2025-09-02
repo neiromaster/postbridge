@@ -4,10 +4,10 @@ version = "0.1.0"
 requires-python = ">=3.13,<3.14"
 
 dependencies = [
-    "ruff",
     "vk-api",
     "python-dotenv",
     "yt-dlp",
+    "emoji",
     
     "tgcrypto>=1.2.5",
     "kurigram>=2.2.9",
@@ -23,4 +23,5 @@ select = ["E", "F", "W", "I"]
 [dependency-groups]
 dev = [
     "ruff>=0.12.11",
+    "pytest",
 ]
