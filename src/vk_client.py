@@ -11,11 +11,10 @@ def clean_post_text(text):
 def get_vk_wall():
     """Get posts from a VK wall."""
 
-    print(f"Fetching posts from VK wall: {VK_DOMAIN}...")
+    print(f"🔍 Собираю посты со стены: {VK_DOMAIN}...")
     vk_session = vk_api.VkApi(token=VK_SERVICE_TOKEN)
     vk = vk_session.get_api()
     response = vk.wall.get(domain=VK_DOMAIN, count=VK_POST_COUNT)
-    print(f"Found {len(response['items'])} posts.")
 
     posts = response["items"]
     for post in posts:

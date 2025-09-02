@@ -8,17 +8,17 @@ load_dotenv()
 # --- Load Configuration from YAML ---
 def load_config():
     """Loads configuration from config.yaml. Returns empty dict if not found."""
-    print("Attempting to load configuration from config.yaml...")
+    print("⚙️  Загружаю конфигурацию из config.yaml...")
     if not os.path.exists("config.yaml"):
-        print("Warning: config.yaml not found. Using default settings where possible.")
+        print("⚠️  config.yaml не найден. Используются настройки по умолчанию.")
         return {}
     try:
         with open("config.yaml", "r") as f:
             config = yaml.safe_load(f)
-        print("Configuration loaded successfully.")
+        print("✅ Конфигурация успешно загружена.")
         return config if config else {}
     except Exception as e:
-        print(f"Warning: Could not read config.yaml. Error: {e}. Using default settings.")
+        print(f"⚠️  Не удалось прочитать config.yaml. Ошибка: {e}. Используются настройки по умолчанию.")
         return {}
 
 

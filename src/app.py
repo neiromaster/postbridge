@@ -1,76 +1,65 @@
 import asyncio
 import os
-import time
 import traceback
 
-from .vk_client import get_vk_wall
-from .downloader import download_video
-from .telegram_client import send_telegram_file
-from .state_manager import get_last_post_id, set_last_post_id
 from .config import TELEGRAM_CHANNEL_ID, WAIT_TIME_SECONDS
+from .downloader import download_video
+from .state_manager import get_last_post_id, set_last_post_id
+from .telegram_client import send_telegram_file
+from .vk_client import get_vk_wall
 
 
 async def run_app():
     """Runs the main application logic."""
-    print("--- Starting vk-to-tg bot ---")
+    print("🚀 Запускаю бота vk-to-tg...")
     last_known_id = get_last_post_id()
 
     while True:
-        print("\n--- Starting new check cycle ---")
+        print("\n🔍 Начинаю новый цикл проверки...")
         try:
             wall_posts = get_vk_wall()
             new_posts = [post for post in wall_posts if post["id"] > last_known_id]
 
-            if not new_posts:
-                print("No new posts found.")
-            else:
-                print(f"Found {len(new_posts)} new posts.")
+            if new_posts:
+                print(f"✅ Найдено {len(new_posts)} новых постов.")
                 for post in sorted(new_posts, key=lambda x: x["id"]):
-                    print(f"\nProcessing post ID: {post['id']}...")
+                    print(f"\n📄 Обрабатываю пост ID: {post['id']}...")
                     post_text = post.get("text", "")
                     video_url = None
 
                     if "attachments" in post:
-                        print("Searching for video attachments...")
                         for attachment in post["attachments"]:
                             if attachment["type"] == "video":
                                 owner_id = attachment["video"]["owner_id"]
                                 video_id = attachment["video"]["id"]
                                 access_key = attachment["video"].get("access_key", "")
                                 video_url = f"https://vk.com/video{owner_id}_{video_id}?access_key={access_key}"
-                                print(f"Found video URL: {video_url}")
+                                print(f"📹 Найдено видео: {video_url}")
                                 break
-                        if not video_url:
-                            print("No video attachment found in this post.")
-                    else:
-                        print("Post has no attachments.")
 
                     if video_url:
                         downloaded_file_path = download_video(video_url)
-
-                        print("Preparing to send to Telegram...")
-                        channel_id = TELEGRAM_CHANNEL_ID
-                        try:
-                            channel_id = int(channel_id)
-                            print(f"Using numeric channel ID: {channel_id}")
-                        except (ValueError, TypeError):
-                            print(f"Using channel username: {channel_id}")
-                            pass
-                        await send_telegram_file(channel_id, downloaded_file_path, post_text)
-
-                        print(f"Cleaning up downloaded file: {downloaded_file_path}")
-                        os.remove(downloaded_file_path)
-                        print("Cleanup complete.")
+                        if downloaded_file_path:
+                            channel_id = TELEGRAM_CHANNEL_ID
+                            try:
+                                channel_id = int(channel_id)
+                            except (ValueError, TypeError):
+                                pass
+                            await send_telegram_file(
+                                channel_id, downloaded_file_path, post_text
+                            )
+                            print("🗑️  Удаляю временный файл...")
+                            os.remove(downloaded_file_path)
+                            print("✅ Файл удален.")
 
                     set_last_post_id(post["id"])
                     last_known_id = post["id"]
-                    print(f"Updated last known post ID to: {last_known_id}")
 
         except Exception as e:
-            print(f"\n---! An error occurred: {e} !---")
+            print(f"\n---! ❌ Произошла ошибка: {e} !---")
             print("--- TRACEBACK ---")
             traceback.print_exc()
             print("-----------------")
 
-        print(f"\n--- Cycle finished. Waiting for {WAIT_TIME_SECONDS} seconds... ---")
+        print(f"\n🏁 Цикл завершен. Пауза {WAIT_TIME_SECONDS} секунд...")
         await asyncio.sleep(WAIT_TIME_SECONDS)
