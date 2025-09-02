@@ -8,7 +8,7 @@ This script monitors a VK community wall for new posts, downloads any attached v
     You must have [uv](https://github.com/astral-sh/uv) installed.
 
     ```bash
-    uv pip install -r requirements.txt
+    uv sync
     ```
 
 2. **Configure environment variables.**

@@ -8,7 +8,7 @@
     У вас должен быть установлен [uv](https://github.com/astral-sh/uv).
 
     ```bash
-    uv pip install -r requirements.txt
+    uv sync
     ```
 
 2. **Настройте переменные окружения.**
