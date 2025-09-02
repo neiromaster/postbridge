@@ -1,33 +1,55 @@
 # VK-to-TG Video Poster
 
-Этот скрипт отслеживает новые посты на стене сообщества VK, скачивает прикрепленные к ним видео и публикует их в Telegram-канал, используя ваш личный аккаунт (через Telethon) для поддержки файлов до 2 ГБ.
+This script monitors a VK community wall for new posts, downloads any attached videos, and publishes them to a Telegram channel using your personal account (via Telethon) to support files up to 2 GB.
 
-## Настройка
+## Setup
 
-1.  **Установите зависимости.**
-    У вас должен быть установлен [uv](https://github.com/astral-sh/uv).
+1. **Install dependencies.**
+    You must have [uv](https://github.com/astral-sh/uv) installed.
 
     ```bash
     uv pip install -r requirements.txt
     ```
 
-2.  **Настройте переменные окружения.**
-    Скопируйте `.env.example` в `.env` и заполните его вашими данными.
+2. **Configure environment variables.**
+    Copy `.env.example` to `.env` and fill in your details.
 
-    - `VK_SERVICE_TOKEN`: Сервисный ключ доступа вашего VK-приложения.
-    - `VK_DOMAIN`: Короткое имя или ID сообщества VK (например, `durov`).
-    - `TELEGRAM_API_ID` и `TELEGRAM_API_HASH`: Получите их на [my.telegram.org](https://my.telegram.org) в разделе "API development tools".
-    - `TELEGRAM_CHANNEL_ID`: ID вашего Telegram-канала (например, `@my_channel` или `-100123456789`).
+    - `VK_SERVICE_TOKEN`: The service access key for your VK application.
+    - `TELEGRAM_API_ID` and `TELEGRAM_API_HASH`: Get these from [my.telegram.org](https://my.telegram.org) under "API development tools".
 
-3.  **Авторизация в VK в браузере.**
-    Для скачивания видео `yt-dlp` требуются cookies. Войдите в свой аккаунт `vk.com` в браузере, который вы указали в `src/downloader.py` (по умолчанию `edge`).
+3. **Configure the configuration file.**
+    Edit the `config.yaml` file to configure the script's behavior.
 
-## Запуск
+4. **Authorize in VK in your browser.**
+    `yt-dlp` requires cookies to download videos. Log in to your `vk.com` account in the browser you specified in `config.yaml` (in the `downloader` section, `browser` parameter).
+
+## Configuration (`config.yaml`)
+
+- **`app`**:
+  - `wait_time_seconds`: The pause in seconds between checking for new posts.
+- **`vk`**:
+  - `domain`: The short name or ID of the VK community (e.g., `durov`).
+  - `post_count`: The number of posts to request with each check.
+  - `post_source`: The source of the posts. Can be `wall` (regular posts) or `donut` (for VK Donut paid subscribers).
+- **`telegram`**:
+  - `channel_ids`: A list of your Telegram channel IDs (e.g., `@my_channel` or `-100123456789`).
+- **`downloader`**:
+  - `browser`: The browser from which cookies will be imported for `yt-dlp` (e.g., `chrome`, `firefox`, `edge`).
+  - `output_path`: The directory to save downloaded videos.
+  - `yt_dlp_opts`: Options for `yt-dlp`.
+    - `concurrent_fragment_downloads`: The number of fragments to download simultaneously.
+    - `skip_unavailable_fragments`: Whether to skip unavailable fragments.
+    - `fragment_retries`: The number of download attempts for each fragment.
+    - `retries`: The total number of download attempts.
+    - `external_downloader`: The external downloader to use (`aria2c`, `native`).
+    - `external_downloader_args`: Arguments for the external downloader.
+
+## Running the script
 
     ```bash
     uv run python main.py
     ```
 
-### Важно: Первый запуск
+### Important: First run
 
-При первом запуске `Telethon` попросит вас ввести номер телефона, код из Telegram и, возможно, пароль двухфакторной аутентификации прямо в консоли. После успешной авторизации будет создан файл `user_session.session`, и в дальнейшем вход будет происходить автоматически.
+On the first run, `Telethon` will ask you to enter your phone number, a code from Telegram, and possibly your two-factor authentication password directly in the console. After successful authorization, a `user_session.session` file will be created, and subsequent logins will be automatic.
