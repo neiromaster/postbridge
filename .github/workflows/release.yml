@@ -36,7 +36,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python_arch }}
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -67,37 +67,31 @@ jobs:
       - name: Build with PyInstaller
         run: uv run pyinstaller main.py --onefile --name postbridge-${{ matrix.label }} --log-level=DEBUG
 
-      - name: Upload Artifact
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: postbridge-${{ matrix.label }}
           path: dist/*
 
+  changelog:
+    name: Generate changelog
+    uses: ./.github/workflows/changelog.yml
+
   create-release:
     name: Create GitHub Release
-    needs: build
+    needs: [build, changelog]
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts/
 
-      - name: Generate changelog
-        id: changelog
-        uses: ./.github/workflows/changelog.yml
-
-      - name: Create Release and Upload Assets
+      - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          body: ${{ steps.changelog.outputs.changelog }}
+          body: ${{ needs.changelog.outputs.changelog }}
           files: artifacts/**/*
           make_latest: true
