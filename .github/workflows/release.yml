@@ -7,21 +7,31 @@ on:
 
 jobs:
   build:
-    name: Build for ${{ matrix.os }} (${{ matrix.arch }})
-    runs-on: ${{ matrix.os }}
+    name: Build for ${{ matrix.label }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
-            arch: x64
-          - os: ubuntu-latest
-            arch: arm64
-          - os: windows-latest
-            arch: x64
-          - os: macos-14
-            arch: x64
-          - os: macos-14
-            arch: arm64
+          - label: linux-x64
+            runner: ubuntu-latest
+            python_arch: x64
+            qemu: false
+          - label: linux-arm64
+            runner: ubuntu-latest
+            python_arch: aarch64
+            qemu: true
+          - label: windows-x64
+            runner: windows-latest
+            python_arch: x64
+            qemu: false
+          - label: macos-x64
+            runner: macos-14
+            python_arch: x64
+            qemu: false
+          - label: macos-arm64
+            runner: macos-14
+            python_arch: arm64
+            qemu: false
 
     defaults:
       run:
@@ -31,25 +41,32 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Устанавливаем QEMU только если нужно
+      - name: Set up QEMU for cross-compilation
+        if: matrix.qemu == true
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/arm64
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
-          architecture: ${{ matrix.arch }}
+          python-version: '3.12'
+          architecture: ${{ matrix.python_arch }}
 
       - name: Install uv
-        run: pip install uv
+        run: pip install uv==0.4.20
 
       - name: Install dependencies
         run: uv sync --group dev
 
       - name: Build with PyInstaller
-        run: uv run pyinstaller main.py --onefile --name postbridge-${{ matrix.os }}-${{ matrix.arch }}
+        run: uv run pyinstaller main.py --onefile --name postbridge-${{ matrix.label }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: postbridge-${{ matrix.os }}-${{ matrix.arch }}
+          name: postbridge-${{ matrix.label }}
           path: dist/*
 
   create-release:
@@ -68,4 +85,4 @@ jobs:
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/*/*
+          files: artifacts/**/*
