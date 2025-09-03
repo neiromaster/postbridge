@@ -9,7 +9,7 @@ load_dotenv()
 # --- Load Configuration from YAML ---
 def load_config():
     """Loads configuration from config.yaml. Returns empty dict if not found."""
-    print("⚙️  Загружаю конфигурацию из config.yaml...")
+    print("⚙️ Загружаю конфигурацию из config.yaml...")
     if not os.path.exists("config.yaml"):
         print("⚠️  config.yaml не найден. Используются настройки по умолчанию.")
         return {}

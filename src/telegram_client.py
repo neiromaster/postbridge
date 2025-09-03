@@ -35,7 +35,7 @@ async def send_telegram_file(channel, file_path, caption):
     """Connects and sends a file to a Telegram channel via a user account."""
     app = Client(SESSION_NAME, api_id=int(TELEGRAM_API_ID), api_hash=TELEGRAM_API_HASH)
     async with app:
-        print("✈️  Отправляю в Telegram...")
+        print("✈️ Отправляю в Telegram...")
         await app.send_video(
             chat_id=channel,
             video=file_path,
