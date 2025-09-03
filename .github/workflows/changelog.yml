@@ -35,7 +35,7 @@ jobs:
           group() {
             local title="$1"
             local pattern="$2"
-            local commits=$(git log --pretty=format:"%H|%s" $RANGE | grep -E "$pattern" || true)
+            local commits=$(git log --pretty=format:"%H|%s" $RANGE | awk -F'|' -v pat="$pattern" '$2 ~ pat {print}')
             if [ -n "$commits" ]; then
               echo "### $title" >> CHANGELOG.md
               while IFS="|" read -r hash subject; do
@@ -52,11 +52,12 @@ jobs:
           group "🐛 Fixes" "^fix"
           group "📚 Documentation" "^docs"
           group "♻ Refactoring" "^refactor"
+          group "🚀 CI/CD" "^ci"
           group "🧪 Tests" "^test"
           group "⚙ Build" "^build"
           group "🔧 Chore" "^chore"
 
-          OTHER=$(git log --pretty=format:"%H|%s" $RANGE | grep -Ev "^(feat|fix|docs|refactor|test|build|chore)" || true)
+          OTHER=$(git log --pretty=format:"%H|%s" $RANGE | awk -F'|' '$2 !~ /^(feat|fix|docs|refactor|ci|test|build|chore)/')
           if [ -n "$OTHER" ]; then
             echo "### Other changes" >> CHANGELOG.md
             while IFS="|" read -r hash subject; do
