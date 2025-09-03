@@ -1,21 +1,21 @@
 import vk_api
 
 from .cleaner import normalize_links
-from .config import VK_DOMAIN, VK_POST_COUNT, VK_POST_SOURCE, VK_SERVICE_TOKEN
+from .config import VK_SERVICE_TOKEN
 
 
-def get_vk_wall():
+def get_vk_wall(domain, post_count, post_source):
     """Get posts from a VK wall."""
 
     params = {
-        "domain": VK_DOMAIN,
-        "count": VK_POST_COUNT,
+        "domain": domain,
+        "count": post_count,
     }
-    if VK_POST_SOURCE == "donut":
+    if post_source == "donut":
         params["filter"] = "donut"
-        print(f"🔍 Собираю посты из VK Donut: {VK_DOMAIN}...")
+        print(f"🔍 Собираю посты из VK Donut: {domain}...")
     else:
-        print(f"🔍 Собираю посты со стены: {VK_DOMAIN}...")
+        print(f"🔍 Собираю посты со стены: {domain}...")
 
     vk_session = vk_api.VkApi(token=VK_SERVICE_TOKEN)
     vk = vk_session.get_api()
@@ -27,9 +27,3 @@ def get_vk_wall():
             post["text"] = normalize_links(post["text"])
 
     return posts
-
-
-if __name__ == "__main__":
-    wall_posts = get_vk_wall()
-    for post in wall_posts:
-        print(post)

@@ -36,15 +36,8 @@ TELEGRAM_API_HASH = os.getenv("TELEGRAM_API_HASH")
 APP_CONFIG = config.get("app", {})
 WAIT_TIME_SECONDS = APP_CONFIG.get("wait_time_seconds", 60)
 
-# VK settings
-VK_CONFIG = config.get("vk", {})
-VK_DOMAIN = VK_CONFIG.get("domain")
-VK_POST_COUNT = VK_CONFIG.get("post_count", 10)
-VK_POST_SOURCE = VK_CONFIG.get("post_source", "wall")
-
-# Telegram settings
-TELEGRAM_CONFIG = config.get("telegram", {})
-TELEGRAM_CHANNEL_IDS = TELEGRAM_CONFIG.get("channel_ids", [])
+# Bindings settings
+BINDINGS = config.get("bindings", [])
 
 # Downloader settings
 DOWNLOADER_CONFIG = config.get("downloader", {})
@@ -65,12 +58,26 @@ def validate_configuration():
         raise ValueError("TELEGRAM_API_HASH is not set in your .env file")
 
     # Validate values from config.yaml
-    if not VK_DOMAIN:
-        raise ValueError("The 'domain' key under the 'vk' section is not set in config.yaml")
-    if not TELEGRAM_CHANNEL_IDS:
-        raise ValueError("The 'channel_ids' key under the 'telegram' section is not set in config.yaml or is empty")
-    if VK_POST_SOURCE not in ["wall", "donut"]:
-        raise ValueError("The 'post_source' key under the 'vk' section in config.yaml must be either 'wall' or 'donut'")
+    if not BINDINGS:
+        raise ValueError("The 'bindings' section is not set in config.yaml or is empty")
+
+    for i, binding in enumerate(BINDINGS):
+        if "vk" not in binding:
+            raise ValueError(f"Binding {i} is missing the 'vk' section")
+        if "telegram" not in binding:
+            raise ValueError(f"Binding {i} is missing the 'telegram' section")
+
+        vk_config = binding["vk"]
+        if "domain" not in vk_config:
+            raise ValueError(f"Binding {i} is missing the 'domain' key in the 'vk' section")
+        if "post_source" not in vk_config:
+            raise ValueError(f"Binding {i} is missing the 'post_source' key in the 'vk' section")
+        if vk_config["post_source"] not in ["wall", "donut"]:
+            raise ValueError(f"Binding {i} has an invalid 'post_source' value. It must be either 'wall' or 'donut'")
+
+        telegram_config = binding["telegram"]
+        if "channel_ids" not in telegram_config or not telegram_config["channel_ids"]:
+            raise ValueError(f"Binding {i} is missing the 'channel_ids' key in the 'telegram' section or it is empty")
 
 
 validate_configuration()
