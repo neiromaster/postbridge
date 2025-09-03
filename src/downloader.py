@@ -1,6 +1,9 @@
 import os
+import subprocess
+import sys
 import time
 
+import psutil
 import yt_dlp
 
 from .config import (
@@ -8,6 +11,51 @@ from .config import (
     DOWNLOADER_OUTPUT_PATH,
     YTDLP_OPTS,
 )
+
+if sys.platform == "win32":
+    BROWSER_EXECUTABLES = {
+        "firefox": "firefox.exe",
+        "chrome": "chrome.exe",
+        "edge": "msedge.exe",
+    }
+else:
+    BROWSER_EXECUTABLES = {
+        "firefox": "firefox",
+        "chrome": "google-chrome",
+        "edge": "microsoft-edge",
+    }
+
+
+def _restart_browser():
+    """Restarts the browser to refresh cookies."""
+    browser_name = DOWNLOADER_BROWSER
+    executable = BROWSER_EXECUTABLES.get(browser_name)
+
+    if not executable:
+        print(f"⚠️ Браузер {browser_name} не поддерживается для перезапуска.")
+        return
+
+    print(f"🔄 Перезапускаю {browser_name} для обновления cookie...")
+
+    for proc in psutil.process_iter(["name"]):
+        if proc.info["name"] == executable:
+            print(f"▶️ {browser_name} уже запущен. Закрываю...")
+            proc.kill()
+            proc.wait()
+
+    print(f"🚀 Запускаю {browser_name}...")
+
+    subprocess.Popen([executable])
+    time.sleep(30)
+
+    for proc in psutil.process_iter(["name"]):
+        if proc.info["name"] == executable:
+            print(f"🛑 Закрываю {browser_name}...")
+            proc.kill()
+            proc.wait()
+            break
+
+    print("✅ Перезапуск завершен.")
 
 
 def download_video(video_url, retries=3, delay=10):
@@ -39,6 +87,10 @@ def download_video(video_url, retries=3, delay=10):
                 return downloaded_file
         except Exception as e:
             print(f"❌ Ошибка скачивания: {e}")
+            if "This video is only available for registered users" in str(e) and i < retries - 1:
+                _restart_browser()
+                continue
+
             if i < retries - 1:
                 current_delay = delay * (2**i)
                 print(f"⏳ Пауза {current_delay} секунд перед следующей попыткой...")

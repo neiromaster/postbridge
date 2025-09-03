@@ -12,6 +12,7 @@ dependencies = [
     "tgcrypto>=1.2.5",
     "kurigram>=2.2.9",
     "PyYAML>=6.0",
+    "psutil",
 ]
 
 [tool.ruff]
