@@ -25,7 +25,7 @@ def _save_state(state):
 
 def get_last_post_id(domain):
     """Reads the last processed post ID for a specific domain from the state file."""
-    print(f"💾 Читаю ID последнего поста для {domain} из {STATE_FILE}...")
+    print(f"\n💾 Читаю ID последнего поста для {domain} из {STATE_FILE}...")
     state = _load_state()
     post_id = state.get(domain, 0)
     print(f"✅ ID последнего поста для {domain}: {post_id}")

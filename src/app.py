@@ -1,6 +1,7 @@
 import asyncio
 import os
 import traceback
+from datetime import datetime
 
 from .config import BINDINGS, WAIT_TIME_SECONDS
 from .downloader import download_video
@@ -14,7 +15,7 @@ async def run_app():
     print("🚀 Запускаю бота vk-to-tg...")
 
     while True:
-        print("\n🔍 Начинаю новый цикл проверки...")
+        print(f"\n🔍 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Начинаю новый цикл проверки...")
         for binding in BINDINGS:
             vk_config = binding["vk"]
             telegram_config = binding["telegram"]
@@ -56,7 +57,7 @@ async def run_app():
                                         await send_telegram_file(channel_id_int, downloaded_file_path, post_text)
                                     except (ValueError, TypeError):
                                         await send_telegram_file(channel_id, downloaded_file_path, post_text)
-                                print("🗑️  Удаляю временный файл...")
+                                print("🗑️ Удаляю временный файл...")
                                 os.remove(downloaded_file_path)
                                 print("✅ Файл удален.")
 
