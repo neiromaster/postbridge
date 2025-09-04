@@ -2,10 +2,11 @@ import os
 import subprocess
 import sys
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Iterator, Optional
 
 import psutil
 import yt_dlp
+from psutil import Process
 
 from .config import settings
 
@@ -35,7 +36,8 @@ def _restart_browser() -> None:
 
     print(f"🔄 Перезапускаю {browser_name} для обновления cookie...")
 
-    for proc in psutil.process_iter(["name"]):
+    processes: Iterator[Process] = psutil.process_iter(["name"])  # type: ignore
+    for proc in processes:
         if proc.info["name"] == executable:
             print(f"▶️ {browser_name} уже запущен. Закрываю...")
             proc.kill()
@@ -46,7 +48,8 @@ def _restart_browser() -> None:
     subprocess.Popen([executable])
     time.sleep(settings.downloader.browser_restart_wait_seconds)
 
-    for proc in psutil.process_iter(["name"]):
+    processes = psutil.process_iter(["name"])  # type: ignore
+    for proc in processes:
         if proc.info["name"] == executable:
             print(f"🛑 Закрываю {browser_name}...")
             proc.kill()
@@ -81,7 +84,7 @@ def download_video(video_url: str) -> Optional[str]:
     for i in range(retries):
         print(f"📥 Скачиваю видео (попытка {i + 1}/{retries})...")
         try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:  # type: ignore
                 info = ydl.extract_info(video_url, download=True)
                 downloaded_file = ydl.prepare_filename(info)
                 print(f"✅ Видео скачано: {downloaded_file}")

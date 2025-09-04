@@ -39,7 +39,7 @@ async def send_telegram_file(channel: Union[int, str], file_path: str, caption: 
     )
     async with app:
         print("✈️ Отправляю в Telegram...")
-        await app.send_video(
+        await app.send_video(  # type: ignore
             chat_id=channel,
             video=file_path,
             caption=caption,
