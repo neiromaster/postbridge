@@ -1,16 +1,17 @@
 import sys
 import time
+from typing import Union
 
-from pyrogram import Client
+from pyrogram.client import Client
 
 from .config import settings
 
 
 class Progress:
-    def __init__(self):
+    def __init__(self) -> None:
         self.start_time = time.time()
 
-    def __call__(self, current, total):
+    def __call__(self, current: int, total: int) -> None:
         now = time.time()
         elapsed = now - self.start_time
         speed_bps = current / elapsed if elapsed > 0 else 0
@@ -29,7 +30,7 @@ class Progress:
         sys.stdout.flush()
 
 
-async def send_telegram_file(channel, file_path, caption):
+async def send_telegram_file(channel: Union[int, str], file_path: str, caption: str) -> None:
     """Connects and sends a file to a Telegram channel via a user account."""
     app = Client(
         settings.app.session_name,

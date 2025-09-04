@@ -1,13 +1,15 @@
+from typing import Any, Dict, List
+
 import vk_api
 
 from .cleaner import normalize_links
 from .config import settings
 
 
-def get_vk_wall(domain, post_count, post_source):
+def get_vk_wall(domain: str, post_count: int, post_source: str) -> List[Dict[str, Any]]:
     """Get posts from a VK wall."""
 
-    params = {
+    params: Dict[str, Any] = {
         "domain": domain,
         "count": post_count,
     }
@@ -21,7 +23,7 @@ def get_vk_wall(domain, post_count, post_source):
     vk = vk_session.get_api()
     response = vk.wall.get(**params)
 
-    posts = response["items"]
+    posts: List[Dict[str, Any]] = response["items"]
     for post in posts:
         if "text" in post:
             post["text"] = normalize_links(post["text"])

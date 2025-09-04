@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 import time
+from typing import Any, Dict, Optional
 
 import psutil
 import yt_dlp
@@ -23,7 +24,7 @@ BROWSER_EXECUTABLES = (
 )
 
 
-def _restart_browser():
+def _restart_browser() -> None:
     """Restarts the browser to refresh cookies."""
     browser_name = settings.downloader.browser
     executable = BROWSER_EXECUTABLES.get(browser_name)
@@ -55,7 +56,7 @@ def _restart_browser():
     print("✅ Перезапуск завершен.")
 
 
-def download_video(video_url):
+def download_video(video_url: str) -> Optional[str]:
     """
     Download a video from a given URL using yt-dlp's browser cookie import,
     with a retry mechanism.
@@ -63,7 +64,7 @@ def download_video(video_url):
     if not os.path.exists(settings.downloader.output_path):
         os.makedirs(settings.downloader.output_path)
 
-    ydl_opts = settings.downloader.yt_dlp_opts.copy()
+    ydl_opts: Dict[str, Any] = settings.downloader.yt_dlp_opts.copy()
     ydl_opts.update(
         {
             "outtmpl": os.path.join(settings.downloader.output_path, "%(id)s.%(ext)s"),
