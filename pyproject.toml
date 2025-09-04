@@ -39,6 +39,7 @@ dev = [
     "pyright>=1.1.404,<2.0.0",
     "types-psutil>=7.0.0.20250822,<8.0.0",
     "types-pyyaml>=6.0.12.20250822,<7.0.0",
+    "vk-api-stubs>=1.0.0",
 ]
 
 [tool.pyright]

@@ -245,6 +245,7 @@ dev = [
     { name = "ruff" },
     { name = "types-psutil" },
     { name = "types-pyyaml" },
+    { name = "vk-api-stubs" },
 ]
 
 [package.metadata]
@@ -272,6 +273,7 @@ dev = [
     { name = "ruff", specifier = ">=0.12.11,<1.0.0" },
     { name = "types-psutil", specifier = ">=7.0.0.20250822,<8.0.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20250822,<7.0.0" },
+    { name = "vk-api-stubs", specifier = ">=1.0.0" },
 ]
 
 [[package]]
@@ -673,6 +675,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/1d/19/1c2733571bb38f8846d6048eb6c756b7651960c73561741ccdb41f6c31bf/vk_api-11.10.0.tar.gz", hash = "sha256:a63fbd7d7a9d39348638d3eade49f964e8ebeba0898a070b03a7f082dbf5d112", size = 46642, upload-time = "2025-07-18T17:08:00.324Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/92/ac/4d14b592c62a18c0d5441105f284db4211f39904d65509ce98df7981a872/vk_api-11.10.0-py3-none-any.whl", hash = "sha256:2032127a64433c307559a0f8d2501eea1415dcfd5408fc398b1e837b6fcfbfe1", size = 53994, upload-time = "2025-07-18T17:07:59.146Z" },
+]
+
+[[package]]
+name = "vk-api-stubs"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/02/d2/c860389c42920e73475fd79d5f2f53232617e5f80f1c7287bdd15c4378b5/vk_api-stubs-1.0.0.tar.gz", hash = "sha256:aef15b6c519b7ff17dfa5d6e4edc660bc5f9bb69978704e8dfc84fa77a89ac5b", size = 23384, upload-time = "2022-09-20T15:45:44.103Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/99/e2/3c9b32d4ac5cb10fb440ec61af3c4fc7f3c848f467ac85efbe6dfc22eda6/vk_api_stubs-1.0.0-py3-none-any.whl", hash = "sha256:1261cdb026f3bab514819d9c0fc334c34d4f456a266b51ddf4dcc4f8232ec51d", size = 26611, upload-time = "2022-09-20T15:45:45.856Z" },
 ]
 
 [[package]]
