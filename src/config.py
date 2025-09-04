@@ -18,7 +18,9 @@ CHANNEL_ID_RE: Final[re.Pattern[str]] = re.compile(r"^(@[A-Za-z0-9_]+|\d+)$")
 
 # --- Models for YAML ---
 class AppConfig(BaseModel):
-    wait_time_seconds: int = Field(..., ge=1)
+    wait_time_seconds: int = Field(default=600, ge=1)
+    state_file: Path = Field(default=Path("state.yaml"))
+    session_name: str = Field(default="user_session")
 
 
 class VKConfig(BaseModel):
@@ -46,10 +48,17 @@ class BindingConfig(BaseModel):
     telegram: TelegramConfig
 
 
+class RetryConfig(BaseModel):
+    count: int = Field(default=3, ge=0)
+    delay_seconds: int = Field(default=10, ge=0)
+
+
 class DownloaderConfig(BaseModel):
     browser: Literal["chrome", "firefox", "edge"]
     output_path: Path
     yt_dlp_opts: Dict[str, Any]
+    retries: RetryConfig = Field(default_factory=RetryConfig)
+    browser_restart_wait_seconds: int = Field(default=30, ge=0)
 
     @field_validator("output_path")
     @classmethod

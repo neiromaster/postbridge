@@ -43,7 +43,7 @@ def _restart_browser():
     print(f"🚀 Запускаю {browser_name}...")
 
     subprocess.Popen([executable])
-    time.sleep(30)
+    time.sleep(settings.downloader.browser_restart_wait_seconds)
 
     for proc in psutil.process_iter(["name"]):
         if proc.info["name"] == executable:
@@ -55,7 +55,7 @@ def _restart_browser():
     print("✅ Перезапуск завершен.")
 
 
-def download_video(video_url, retries=3, delay=10):
+def download_video(video_url):
     """
     Download a video from a given URL using yt-dlp's browser cookie import,
     with a retry mechanism.
@@ -73,6 +73,9 @@ def download_video(video_url, retries=3, delay=10):
             "verbose": False,
         }
     )
+
+    retries = settings.downloader.retries.count
+    delay = settings.downloader.retries.delay_seconds
 
     for i in range(retries):
         print(f"📥 Скачиваю видео (попытка {i + 1}/{retries})...")

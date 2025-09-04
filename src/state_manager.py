@@ -2,15 +2,15 @@ import os
 
 import yaml
 
-STATE_FILE = "state.yaml"
+from .config import settings
 
 
 def _load_state():
     """Loads the state from the YAML file."""
-    if not os.path.exists(STATE_FILE):
+    if not os.path.exists(settings.app.state_file):
         return {}
     try:
-        with open(STATE_FILE, "r") as f:
+        with open(settings.app.state_file, "r") as f:
             state = yaml.safe_load(f)
             return state if state else {}
     except (yaml.YAMLError, FileNotFoundError):
@@ -19,13 +19,13 @@ def _load_state():
 
 def _save_state(state):
     """Saves the state to the YAML file."""
-    with open(STATE_FILE, "w") as f:
+    with open(settings.app.state_file, "w") as f:
         yaml.dump(state, f, indent=4)
 
 
 def get_last_post_id(domain):
     """Reads the last processed post ID for a specific domain from the state file."""
-    print(f"\n💾 Читаю ID последнего поста для {domain} из {STATE_FILE}...")
+    print(f"\n💾 Читаю ID последнего поста для {domain} из {settings.app.state_file}...")
     state = _load_state()
     post_id = state.get(domain, 0)
     print(f"✅ ID последнего поста для {domain}: {post_id}")
@@ -34,7 +34,7 @@ def get_last_post_id(domain):
 
 def set_last_post_id(domain, post_id):
     """Writes the last processed post ID for a specific domain to the state file."""
-    print(f"💾 Записываю ID последнего поста для {domain} в {STATE_FILE}...")
+    print(f"💾 Записываю ID последнего поста для {domain} в {settings.app.state_file}...")
     state = _load_state()
     state[domain] = post_id
     _save_state(state)

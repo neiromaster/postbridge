@@ -5,8 +5,6 @@ from pyrogram import Client
 
 from .config import settings
 
-SESSION_NAME = "user_session"
-
 
 class Progress:
     def __init__(self):
@@ -34,7 +32,7 @@ class Progress:
 async def send_telegram_file(channel, file_path, caption):
     """Connects and sends a file to a Telegram channel via a user account."""
     app = Client(
-        SESSION_NAME,
+        settings.app.session_name,
         api_id=settings.telegram_api_id,
         api_hash=settings.telegram_api_hash,
     )
