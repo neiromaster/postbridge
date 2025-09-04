@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, HttpUrl
 
@@ -28,6 +28,7 @@ class Video(BaseModel):
     title: str
     description: Optional[str] = None
     duration: Optional[int] = None
+    access_key: Optional[str] = None
 
     @property
     def url(self) -> str:
@@ -38,6 +39,11 @@ class Attachment(BaseModel):
     type: Literal["photo", "video", "doc", "link", "poll", "audio", "graffiti"]
     photo: Optional[Photo] = None
     video: Optional[Video] = None
+    doc: Optional[Dict[str, Any]] = None
+    link: Optional[Dict[str, Any]] = None
+    poll: Optional[Dict[str, Any]] = None
+    audio: Optional[Dict[str, Any]] = None
+    graffiti: Optional[Dict[str, Any]] = None
 
 
 class Post(BaseModel):
@@ -48,3 +54,7 @@ class Post(BaseModel):
     text: str
     attachments: List[Attachment] = []
     is_pinned: Optional[int] = Field(None)
+
+
+class WallGetResponse(BaseModel):
+    items: List[Post]

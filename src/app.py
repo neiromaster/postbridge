@@ -2,16 +2,14 @@ import asyncio
 import os
 import traceback
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from .config import settings
 from .downloader import download_video
+from .dto import Post
 from .state_manager import get_last_post_id, set_last_post_id
 from .telegram_client import send_telegram_file
 from .vk_client import get_vk_wall
-
-# Type alias for a VK post dictionary
-Post = Dict[str, Any]
 
 
 async def run_app() -> None:
@@ -33,22 +31,21 @@ async def run_app() -> None:
 
             try:
                 wall_posts: List[Post] = get_vk_wall(domain, post_count, post_source)
-                new_posts: List[Post] = [post for post in wall_posts if post["id"] > last_known_id]
+                new_posts: List[Post] = [post for post in wall_posts if post.id > last_known_id]
 
                 if new_posts:
                     print(f"✅ Найдено {len(new_posts)} новых постов в {domain}.")
-                    for post in sorted(new_posts, key=lambda x: x["id"]):
-                        print(f"\n📄 Обрабатываю пост ID: {post['id']} из {domain}...")
-                        post_text: str = post.get("text", "")
+                    for post in sorted(new_posts, key=lambda p: p.id):
+                        print(f"\n📄 Обрабатываю пост ID: {post.id} из {domain}...")
+                        post_text: str = post.text or ""
                         video_url: Optional[str] = None
 
-                        if "attachments" in post:
-                            for attachment in post["attachments"]:
-                                if attachment["type"] == "video":
-                                    owner_id: int = attachment["video"]["owner_id"]
-                                    video_id: int = attachment["video"]["id"]
-                                    access_key: str = attachment["video"].get("access_key", "")
-                                    video_url = f"https://vk.com/video{owner_id}_{video_id}?access_key={access_key}"
+                        if post.attachments:
+                            for attachment in post.attachments:
+                                if attachment.type == "video" and attachment.video:
+                                    video = attachment.video
+                                    access_key_part = f"?access_key={video.access_key}" if video.access_key else ""
+                                    video_url = f"https://vk.com/video{video.owner_id}_{video.id}{access_key_part}"
                                     print(f"📹 Найдено видео: {video_url}")
                                     break
 
@@ -67,8 +64,8 @@ async def run_app() -> None:
                         else:
                             print("🤷‍♂️ Видео в посте не найдено, пропускаю.")
 
-                        set_last_post_id(domain, post["id"])
-                        last_known_id = post["id"]
+                        set_last_post_id(domain, post.id)
+                        last_known_id = post.id
 
             except Exception as e:
                 print(f"\n---! ❌ Произошла ошибка при обработке {domain}: {e} !---")

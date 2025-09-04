@@ -4,9 +4,10 @@ import vk_api
 
 from .cleaner import normalize_links
 from .config import settings
+from .dto import Post, WallGetResponse
 
 
-def get_vk_wall(domain: str, post_count: int, post_source: str) -> List[Dict[str, Any]]:
+def get_vk_wall(domain: str, post_count: int, post_source: str) -> List[Post]:
     """Get posts from a VK wall."""
 
     params: Dict[str, Any] = {
@@ -23,9 +24,9 @@ def get_vk_wall(domain: str, post_count: int, post_source: str) -> List[Dict[str
     vk = vk_session.get_api()
     response = vk.wall.get(**params)
 
-    posts: List[Dict[str, Any]] = response["items"]
+    posts = WallGetResponse.model_validate(response).items
     for post in posts:
-        if "text" in post:
-            post["text"] = normalize_links(post["text"])
+        if post.text:
+            post.text = normalize_links(post.text)
 
     return posts
