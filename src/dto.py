@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, RootModel
 
 
 class PhotoSize(BaseModel):
@@ -60,5 +60,5 @@ class WallGetResponse(BaseModel):
     items: List[Post]
 
 
-class State(BaseModel):
-    last_post_ids: Dict[str, int] = Field(default_factory=dict)
+class State(RootModel[Dict[str, int]]):
+    root: Dict[str, int] = Field(default_factory=dict)
