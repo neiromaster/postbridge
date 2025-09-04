@@ -1,3 +1,4 @@
+import asyncio
 import os
 import subprocess
 import sys
@@ -25,7 +26,7 @@ BROWSER_EXECUTABLES = (
 )
 
 
-def _restart_browser() -> None:
+async def _restart_browser() -> None:
     """Restarts the browser to refresh cookies."""
     browser_name = settings.downloader.browser
     executable = BROWSER_EXECUTABLES.get(browser_name)
@@ -36,30 +37,30 @@ def _restart_browser() -> None:
 
     print(f"🔄 Перезапускаю {browser_name} для обновления cookie...")
 
-    processes: Iterator[Process] = psutil.process_iter(["name"])  # type: ignore
+    processes: Iterator[Process] = await asyncio.to_thread(psutil.process_iter, ["name"])  # type: ignore
     for proc in processes:
         if proc.info["name"] == executable:
             print(f"▶️ {browser_name} уже запущен. Закрываю...")
-            proc.kill()
-            proc.wait()
+            await asyncio.to_thread(proc.kill)
+            await asyncio.to_thread(proc.wait)
 
     print(f"🚀 Запускаю {browser_name}...")
 
-    subprocess.Popen([executable])
-    time.sleep(settings.downloader.browser_restart_wait_seconds)
+    await asyncio.to_thread(subprocess.Popen, [executable])
+    await asyncio.sleep(settings.downloader.browser_restart_wait_seconds)
 
-    processes = psutil.process_iter(["name"])  # type: ignore
+    processes = await asyncio.to_thread(psutil.process_iter, ["name"])  # type: ignore
     for proc in processes:
         if proc.info["name"] == executable:
             print(f"🛑 Закрываю {browser_name}...")
-            proc.kill()
-            proc.wait()
+            await asyncio.to_thread(proc.kill)
+            await asyncio.to_thread(proc.wait)
             break
 
     print("✅ Перезапуск завершен.")
 
 
-def download_video(video_url: str) -> Optional[str]:
+async def download_video(video_url: str) -> Optional[str]:
     """
     Download a video from a given URL using yt-dlp's browser cookie import,
     with a retry mechanism.
@@ -85,14 +86,14 @@ def download_video(video_url: str) -> Optional[str]:
         print(f"📥 Скачиваю видео (попытка {i + 1}/{retries})...")
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:  # type: ignore
-                info = ydl.extract_info(video_url, download=True)
+                info = await asyncio.to_thread(ydl.extract_info, video_url, download=True)
                 downloaded_file = ydl.prepare_filename(info)
                 print(f"✅ Видео скачано: {downloaded_file}")
                 return downloaded_file
         except Exception as e:
             print(f"❌ Ошибка скачивания: {e}")
             if "This video is only available for registered users" in str(e) and i < retries - 1:
-                _restart_browser()
+                await _restart_browser()
                 continue
 
             if i < retries - 1:
