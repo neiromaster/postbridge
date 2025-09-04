@@ -60,6 +60,8 @@ async def run_app():
                                 print("🗑️ Удаляю временный файл...")
                                 os.remove(downloaded_file_path)
                                 print("✅ Файл удален.")
+                        else:
+                            print("🤷‍♂️ Видео в посте не найдено, пропускаю.")
 
                         set_last_post_id(domain, post["id"])
                         last_known_id = post["id"]
