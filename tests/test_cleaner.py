@@ -38,6 +38,6 @@ TEST_CASES = [
 
 
 @pytest.mark.parametrize("test_id, input_text, expected_text", TEST_CASES)
-def test_atomic_cases(test_id, input_text, expected_text):
+def test_atomic_cases(test_id: str, input_text: str, expected_text: str) -> None:
     result = normalize_links(input_text)
     assert result == expected_text
