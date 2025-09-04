@@ -58,3 +58,7 @@ class Post(BaseModel):
 
 class WallGetResponse(BaseModel):
     items: List[Post]
+
+
+class State(BaseModel):
+    last_post_ids: Dict[str, int] = Field(default_factory=dict)
