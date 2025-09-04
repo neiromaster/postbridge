@@ -3,7 +3,7 @@ import os
 import traceback
 from datetime import datetime
 
-from .config import BINDINGS, WAIT_TIME_SECONDS
+from .config import settings
 from .downloader import download_video
 from .state_manager import get_last_post_id, set_last_post_id
 from .telegram_client import send_telegram_file
@@ -15,14 +15,14 @@ async def run_app():
     print("🚀 Запускаю бота vk-to-tg...")
 
     while True:
-        print(f"\n🔍 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Начинаю новый цикл проверки...")
-        for binding in BINDINGS:
-            vk_config = binding["vk"]
-            telegram_config = binding["telegram"]
-            domain = vk_config["domain"]
-            post_count = vk_config.get("post_count", 10)
-            post_source = vk_config.get("post_source", "wall")
-            channel_ids = telegram_config["channel_ids"]
+        print(f"\n🔍 {datetime.now().strftime('%H:%M:%S %Y-%m-%d')} | Начинаю новый цикл проверки...")
+        for binding in settings.bindings:
+            vk_config = binding.vk
+            telegram_config = binding.telegram
+            domain = vk_config.domain
+            post_count = vk_config.post_count
+            post_source = vk_config.post_source
+            channel_ids = telegram_config.channel_ids
 
             last_known_id = get_last_post_id(domain)
             print(f"\n📄 Проверяю группу {domain}...")
@@ -70,5 +70,5 @@ async def run_app():
                 traceback.print_exc()
                 print("-----------------")
 
-        print(f"\n🏁 Цикл завершен. Пауза {WAIT_TIME_SECONDS} секунд...")
-        await asyncio.sleep(WAIT_TIME_SECONDS)
+        print(f"\n🏁 Цикл завершен. Пауза {settings.app.wait_time_seconds} секунд...")
+        await asyncio.sleep(settings.app.wait_time_seconds)

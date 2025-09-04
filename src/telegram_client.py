@@ -3,7 +3,7 @@ import time
 
 from pyrogram import Client
 
-from .config import TELEGRAM_API_HASH, TELEGRAM_API_ID
+from .config import settings
 
 SESSION_NAME = "user_session"
 
@@ -33,7 +33,11 @@ class Progress:
 
 async def send_telegram_file(channel, file_path, caption):
     """Connects and sends a file to a Telegram channel via a user account."""
-    app = Client(SESSION_NAME, api_id=int(TELEGRAM_API_ID), api_hash=TELEGRAM_API_HASH)
+    app = Client(
+        SESSION_NAME,
+        api_id=settings.telegram_api_id,
+        api_hash=settings.telegram_api_hash,
+    )
     async with app:
         print("✈️ Отправляю в Telegram...")
         await app.send_video(

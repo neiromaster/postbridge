@@ -1,7 +1,7 @@
 import vk_api
 
 from .cleaner import normalize_links
-from .config import VK_SERVICE_TOKEN
+from .config import settings
 
 
 def get_vk_wall(domain, post_count, post_source):
@@ -17,7 +17,7 @@ def get_vk_wall(domain, post_count, post_source):
     else:
         print(f"🔍 Собираю посты со стены: {domain}...")
 
-    vk_session = vk_api.VkApi(token=VK_SERVICE_TOKEN)
+    vk_session = vk_api.VkApi(token=settings.vk_service_token)
     vk = vk_session.get_api()
     response = vk.wall.get(**params)
 

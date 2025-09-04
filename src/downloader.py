@@ -6,29 +6,26 @@ import time
 import psutil
 import yt_dlp
 
-from .config import (
-    DOWNLOADER_BROWSER,
-    DOWNLOADER_OUTPUT_PATH,
-    YTDLP_OPTS,
-)
+from .config import settings
 
-if sys.platform == "win32":
-    BROWSER_EXECUTABLES = {
+BROWSER_EXECUTABLES = (
+    {
         "firefox": "firefox.exe",
         "chrome": "chrome.exe",
         "edge": "msedge.exe",
     }
-else:
-    BROWSER_EXECUTABLES = {
+    if sys.platform == "win32"
+    else {
         "firefox": "firefox",
         "chrome": "google-chrome",
         "edge": "microsoft-edge",
     }
+)
 
 
 def _restart_browser():
     """Restarts the browser to refresh cookies."""
-    browser_name = DOWNLOADER_BROWSER
+    browser_name = settings.downloader.browser
     executable = BROWSER_EXECUTABLES.get(browser_name)
 
     if not executable:
@@ -63,14 +60,14 @@ def download_video(video_url, retries=3, delay=10):
     Download a video from a given URL using yt-dlp's browser cookie import,
     with a retry mechanism.
     """
-    if not os.path.exists(DOWNLOADER_OUTPUT_PATH):
-        os.makedirs(DOWNLOADER_OUTPUT_PATH)
+    if not os.path.exists(settings.downloader.output_path):
+        os.makedirs(settings.downloader.output_path)
 
-    ydl_opts = YTDLP_OPTS.copy()
+    ydl_opts = settings.downloader.yt_dlp_opts.copy()
     ydl_opts.update(
         {
-            "outtmpl": os.path.join(DOWNLOADER_OUTPUT_PATH, "%(id)s.%(ext)s"),
-            "cookiesfrombrowser": (DOWNLOADER_BROWSER,),
+            "outtmpl": os.path.join(settings.downloader.output_path, "%(id)s.%(ext)s"),
+            "cookiesfrombrowser": (settings.downloader.browser,),
             "quiet": True,
             "no_warnings": True,
             "verbose": False,
