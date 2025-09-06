@@ -10,10 +10,10 @@ from .dto import State
 
 async def _load_state() -> State:
     """Loads the state from the YAML file."""
-    if not os.path.exists(settings.app.state_file):
+    if not await asyncio.to_thread(os.path.exists, settings.app.state_file):
         return State(root={})
     try:
-        async with aiofiles.open(settings.app.state_file, "r") as f:
+        async with aiofiles.open(settings.app.state_file) as f:
             content = await f.read()
             state_data = await asyncio.to_thread(yaml.safe_load, content)
             return State(root=state_data) if state_data else State(root={})

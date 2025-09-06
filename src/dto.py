@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, HttpUrl, RootModel
 
@@ -13,7 +13,7 @@ class PhotoSize(BaseModel):
 class Photo(BaseModel):
     id: int
     owner_id: int
-    sizes: List[PhotoSize]
+    sizes: list[PhotoSize]
 
     @property
     def max_size_url(self) -> HttpUrl:
@@ -26,9 +26,9 @@ class Video(BaseModel):
     id: int
     owner_id: int
     title: str
-    description: Optional[str] = None
-    duration: Optional[int] = None
-    access_key: Optional[str] = None
+    description: str | None = None
+    duration: int | None = None
+    access_key: str | None = None
 
     @property
     def url(self) -> str:
@@ -37,13 +37,13 @@ class Video(BaseModel):
 
 class Attachment(BaseModel):
     type: Literal["photo", "video", "doc", "link", "poll", "audio", "graffiti"]
-    photo: Optional[Photo] = None
-    video: Optional[Video] = None
-    doc: Optional[Dict[str, Any]] = None
-    link: Optional[Dict[str, Any]] = None
-    poll: Optional[Dict[str, Any]] = None
-    audio: Optional[Dict[str, Any]] = None
-    graffiti: Optional[Dict[str, Any]] = None
+    photo: Photo | None = None
+    video: Video | None = None
+    doc: dict[str, Any] | None = None
+    link: dict[str, Any] | None = None
+    poll: dict[str, Any] | None = None
+    audio: dict[str, Any] | None = None
+    graffiti: dict[str, Any] | None = None
 
 
 class Post(BaseModel):
@@ -52,13 +52,13 @@ class Post(BaseModel):
     from_id: int
     date: int
     text: str
-    attachments: List[Attachment] = []
-    is_pinned: Optional[int] = Field(None)
+    attachments: list[Attachment] = []
+    is_pinned: int | None = Field(None)
 
 
 class WallGetResponse(BaseModel):
-    items: List[Post]
+    items: list[Post]
 
 
-class State(RootModel[Dict[str, int]]):
-    root: Dict[str, int] = Field(default_factory=dict)
+class State(RootModel[dict[str, int]]):
+    root: dict[str, int] = Field(default_factory=dict)

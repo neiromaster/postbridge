@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any, Dict, Final, List, Literal, Tuple, Type, cast
+from typing import Any, Final, Literal, cast
 
 import yaml
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -30,11 +30,11 @@ class VKConfig(BaseModel):
 
 
 class TelegramConfig(BaseModel):
-    channel_ids: List[str]
+    channel_ids: list[str]
 
     @field_validator("channel_ids")
     @classmethod
-    def validate_channel_ids(cls, v: List[str]) -> List[str]:
+    def validate_channel_ids(cls, v: list[str]) -> list[str]:
         if not v:
             raise ValueError("Список channel_ids не может быть пустым")
         for ch in v:
@@ -56,7 +56,7 @@ class RetryConfig(BaseModel):
 class DownloaderConfig(BaseModel):
     browser: Literal["chrome", "firefox", "edge"]
     output_path: Path
-    yt_dlp_opts: Dict[str, Any]
+    yt_dlp_opts: dict[str, Any]
     retries: RetryConfig = Field(default_factory=RetryConfig)
     browser_restart_wait_seconds: int = Field(default=30, ge=0)
 
@@ -77,7 +77,7 @@ class Settings(BaseSettings):
 
     # From YAML
     app: AppConfig
-    bindings: List[BindingConfig]
+    bindings: list[BindingConfig]
     downloader: DownloaderConfig
 
     model_config = SettingsConfigDict(
@@ -89,22 +89,21 @@ class Settings(BaseSettings):
     # --- Custom source for YAML ---
     class YamlConfigSource(PydanticBaseSettingsSource):
         yaml_path: Path
-        _data: Dict[str, Any]
+        _data: dict[str, Any]
 
-        def __init__(self, settings_cls: Type[BaseSettings], yaml_path: Path) -> None:
+        def __init__(self, settings_cls: type[BaseSettings], yaml_path: Path) -> None:
             super().__init__(settings_cls)
             self.yaml_path = yaml_path
             self._data = {}
 
-        def _read_yaml(self) -> Dict[str, Any]:
-            if not self._data:
-                if self.yaml_path.exists():
-                    with open(self.yaml_path, "r", encoding="utf-8") as f:
-                        loaded = yaml.safe_load(f)
-                        self._data = loaded if isinstance(loaded, dict) else {}
+        def _read_yaml(self) -> dict[str, Any]:
+            if not self._data and self.yaml_path.exists():
+                with open(self.yaml_path, encoding="utf-8") as f:
+                    loaded = yaml.safe_load(f)
+                    self._data = loaded if isinstance(loaded, dict) else {}
             return self._data
 
-        def get_field_value(self, field: Any, field_name: str) -> Tuple[Any, str, bool]:
+        def get_field_value(self, field: Any, field_name: str) -> tuple[Any, str, bool]:
             data = self._read_yaml()
             if field_name in data:
                 return data[field_name], field_name, True
@@ -113,19 +112,19 @@ class Settings(BaseSettings):
         def prepare_field_value(self, field_name: str, field: Any, value: Any, value_is_complex: bool) -> Any:
             return value
 
-        def __call__(self) -> Dict[str, Any]:
+        def __call__(self) -> dict[str, Any]:
             """Returns the entire configuration dictionary from YAML."""
             return self._read_yaml()
 
     @classmethod
     def settings_customise_sources(
         cls,
-        settings_cls: Type[BaseSettings],
+        settings_cls: type[BaseSettings],
         init_settings: PydanticBaseSettingsSource,
         env_settings: PydanticBaseSettingsSource,
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
-    ) -> Tuple[PydanticBaseSettingsSource, ...]:
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
         return (
             init_settings,
             env_settings,
@@ -142,8 +141,8 @@ class Settings(BaseSettings):
 
     @classmethod
     def load(cls) -> Settings:
-        """The factory method for the correct call without arguments."""
-        factory: Type[Any] = cast(Type[Any], cls)
+        """Factory method for correct instantiation without arguments."""
+        factory: type[Any] = cast(type[Any], cls)
         instance = factory()
         return cast(Settings, instance)
 
