@@ -11,15 +11,17 @@ from .managers.vk_client_manager import VKClientManager
 from .managers.ytdlp_manager import YtDlpManager
 from .state_manager import get_last_post_id, set_last_post_id
 
-logging.basicConfig(level=logging.ERROR, format="%(asctime)s - %(levelname)s - %(message)s")
-
 
 async def run_app(
     shutdown_event: asyncio.Event,
     vk_manager: VKClientManager,
     tg_manager: TelegramClientManager,
     ytdlp_manager: YtDlpManager,
+    log_level: str,
 ) -> None:
+    log_level_int = getattr(logging, log_level.upper(), logging.WARNING)
+    logging.basicConfig(level=log_level_int, format="%(asctime)s - %(levelname)s - %(message)s")
+
     print("🚀 Запускаю бота vk-to-tg...")
     try:
         while not shutdown_event.is_set():

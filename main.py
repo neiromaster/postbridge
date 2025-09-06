@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import signal
 import sys
@@ -8,7 +9,7 @@ from src.managers.vk_client_manager import VKClientManager
 from src.managers.ytdlp_manager import YtDlpManager
 
 
-async def main() -> None:
+async def main(log_level: str) -> None:
     shutdown_event = asyncio.Event()
 
     # On Linux/macOS, you can use signals
@@ -27,7 +28,7 @@ async def main() -> None:
     await ytdlp_manager.start()
 
     try:
-        await run_app(shutdown_event, vk_manager, tg_manager, ytdlp_manager)
+        await run_app(shutdown_event, vk_manager, tg_manager, ytdlp_manager, log_level)
     except KeyboardInterrupt:
         print("\n🧹 Завершение по Ctrl+C.")
         shutdown_event.set()
@@ -40,4 +41,14 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(description="VK to Telegram Bot")
+    parser.add_argument(
+        "--log-level",
+        type=str,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        default="WARNING",
+        help="Set the logging level",
+    )
+    args = parser.parse_args()
+
+    asyncio.run(main(log_level=args.log_level))
