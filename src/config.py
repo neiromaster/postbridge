@@ -1,83 +1,154 @@
-import os
+from __future__ import annotations
+
+import re
+from pathlib import Path
+from typing import Any, Final, Literal, cast
 
 import yaml
-from dotenv import load_dotenv
+from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+)
 
-load_dotenv()
-
-
-# --- Load Configuration from YAML ---
-def load_config():
-    """Loads configuration from config.yaml. Returns empty dict if not found."""
-    print("⚙️ Загружаю конфигурацию из config.yaml...")
-    if not os.path.exists("config.yaml"):
-        print("⚠️  config.yaml не найден. Используются настройки по умолчанию.")
-        return {}
-    try:
-        with open("config.yaml", "r") as f:
-            config = yaml.safe_load(f)
-        print("✅ Конфигурация успешно загружена.")
-        return config if config else {}
-    except Exception as e:
-        print(f"⚠️  Не удалось прочитать config.yaml. Ошибка: {e}. Используются настройки по умолчанию.")
-        return {}
+# --- Constants ---
+CHANNEL_ID_RE: Final[re.Pattern[str]] = re.compile(r"^(@[A-Za-z0-9_]+|\d+)$")
 
 
-# --- Configuration Objects ---
-config = load_config()
-
-# --- Secrets ---
-VK_SERVICE_TOKEN = os.getenv("VK_SERVICE_TOKEN")
-TELEGRAM_API_ID = os.getenv("TELEGRAM_API_ID")
-TELEGRAM_API_HASH = os.getenv("TELEGRAM_API_HASH")
-
-# --- Expose Configuration Values ---
-# App settings
-APP_CONFIG = config.get("app", {})
-WAIT_TIME_SECONDS = APP_CONFIG.get("wait_time_seconds", 60)
-
-# Bindings settings
-BINDINGS = config.get("bindings", [])
-
-# Downloader settings
-DOWNLOADER_CONFIG = config.get("downloader", {})
-DOWNLOADER_BROWSER = DOWNLOADER_CONFIG.get("browser", "edge")
-DOWNLOADER_OUTPUT_PATH = DOWNLOADER_CONFIG.get("output_path", "downloads")
-YTDLP_OPTS = DOWNLOADER_CONFIG.get("yt_dlp_opts", {})
+# --- Models for YAML ---
+class AppConfig(BaseModel):
+    wait_time_seconds: int = Field(default=600, ge=1)
+    state_file: Path = Field(default=Path("state.yaml"))
+    session_name: str = Field(default="user_session")
 
 
-# --- Validate Configuration ---
-def validate_configuration():
-    """Validates that all necessary configuration variables are set."""
-    # Validate secrets from .env
-    if not VK_SERVICE_TOKEN:
-        raise ValueError("VK_SERVICE_TOKEN is not set in your .env file")
-    if not TELEGRAM_API_ID:
-        raise ValueError("TELEGRAM_API_ID is not set in your .env file")
-    if not TELEGRAM_API_HASH:
-        raise ValueError("TELEGRAM_API_HASH is not set in your .env file")
-
-    # Validate values from config.yaml
-    if not BINDINGS:
-        raise ValueError("The 'bindings' section is not set in config.yaml or is empty")
-
-    for i, binding in enumerate(BINDINGS):
-        if "vk" not in binding:
-            raise ValueError(f"Binding {i} is missing the 'vk' section")
-        if "telegram" not in binding:
-            raise ValueError(f"Binding {i} is missing the 'telegram' section")
-
-        vk_config = binding["vk"]
-        if "domain" not in vk_config:
-            raise ValueError(f"Binding {i} is missing the 'domain' key in the 'vk' section")
-        if "post_source" not in vk_config:
-            raise ValueError(f"Binding {i} is missing the 'post_source' key in the 'vk' section")
-        if vk_config["post_source"] not in ["wall", "donut"]:
-            raise ValueError(f"Binding {i} has an invalid 'post_source' value. It must be either 'wall' or 'donut'")
-
-        telegram_config = binding["telegram"]
-        if "channel_ids" not in telegram_config or not telegram_config["channel_ids"]:
-            raise ValueError(f"Binding {i} is missing the 'channel_ids' key in the 'telegram' section or it is empty")
+class VKConfig(BaseModel):
+    domain: str = Field(..., min_length=1)
+    post_count: int = Field(..., ge=1)
+    post_source: Literal["wall", "donut"]
 
 
-validate_configuration()
+class TelegramConfig(BaseModel):
+    channel_ids: list[str]
+
+    @field_validator("channel_ids")
+    @classmethod
+    def validate_channel_ids(cls, v: list[str]) -> list[str]:
+        if not v:
+            raise ValueError("Список channel_ids не может быть пустым")
+        for ch in v:
+            if not CHANNEL_ID_RE.match(ch):
+                raise ValueError(f"Некорректный формат channel_id: {ch}. Используйте @username или числовой ID.")
+        return v
+
+
+class BindingConfig(BaseModel):
+    vk: VKConfig
+    telegram: TelegramConfig
+
+
+class RetryConfig(BaseModel):
+    count: int = Field(default=3, ge=0)
+    delay_seconds: int = Field(default=10, ge=0)
+
+
+class DownloaderConfig(BaseModel):
+    browser: Literal["chrome", "firefox", "edge"]
+    output_path: Path
+    yt_dlp_opts: dict[str, Any]
+    retries: RetryConfig = Field(default_factory=RetryConfig)
+    browser_restart_wait_seconds: int = Field(default=30, ge=0)
+
+    @field_validator("output_path")
+    @classmethod
+    def ensure_output_path_exists(cls, v: Path) -> Path:
+        if not v.exists():
+            v.mkdir(parents=True, exist_ok=True)
+        return v
+
+
+# --- The main model of settings ---
+class Settings(BaseSettings):
+    # From .env
+    vk_service_token: str = Field(..., alias="VK_SERVICE_TOKEN")
+    telegram_api_id: int = Field(..., alias="TELEGRAM_API_ID")
+    telegram_api_hash: str = Field(..., alias="TELEGRAM_API_HASH")
+
+    # From YAML
+    app: AppConfig
+    bindings: list[BindingConfig]
+    downloader: DownloaderConfig
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    # --- Custom source for YAML ---
+    class YamlConfigSource(PydanticBaseSettingsSource):
+        yaml_path: Path
+        _data: dict[str, Any]
+
+        def __init__(self, settings_cls: type[BaseSettings], yaml_path: Path) -> None:
+            super().__init__(settings_cls)
+            self.yaml_path = yaml_path
+            self._data = {}
+
+        def _read_yaml(self) -> dict[str, Any]:
+            if not self._data and self.yaml_path.exists():
+                with open(self.yaml_path, encoding="utf-8") as f:
+                    loaded = yaml.safe_load(f)
+                    self._data = loaded if isinstance(loaded, dict) else {}
+            return self._data
+
+        def get_field_value(self, field: Any, field_name: str) -> tuple[Any, str, bool]:
+            data = self._read_yaml()
+            if field_name in data:
+                return data[field_name], field_name, True
+            return None, field_name, False
+
+        def prepare_field_value(self, field_name: str, field: Any, value: Any, value_is_complex: bool) -> Any:
+            return value
+
+        def __call__(self) -> dict[str, Any]:
+            """Returns the entire configuration dictionary from YAML."""
+            return self._read_yaml()
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (
+            init_settings,
+            env_settings,
+            dotenv_settings,
+            cls.YamlConfigSource(settings_cls, Path("config.yaml")),
+            file_secret_settings,
+        )
+
+    @model_validator(mode="after")
+    def check_bindings_not_empty(self) -> Settings:
+        if not self.bindings:
+            raise ValueError("Список bindings не может быть пустым")
+        return self
+
+    @classmethod
+    def load(cls) -> Settings:
+        """Factory method for correct instantiation without arguments."""
+        factory: type[Any] = cast(type[Any], cls)
+        instance = factory()
+        return cast(Settings, instance)
+
+
+if __name__ == "__main__":
+    settings = Settings.load()
+    print(settings.model_dump())
+
+settings = Settings.load()

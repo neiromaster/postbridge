@@ -2,6 +2,10 @@
 app:
   # Time to wait between checking for new posts, in seconds
   wait_time_seconds: 600
+  # Path to the state file, which stores the ID of the last processed post
+  state_file: "state.yaml"
+  # Name of the session file for the Telegram user account
+  session_name: "user_session"
 
 # A list of VK to Telegram bindings
 bindings:
@@ -24,6 +28,14 @@ downloader:
   browser: "firefox"
   # Directory to save downloaded videos
   output_path: "downloads"
+  # Time to wait after restarting the browser to refresh cookies, in seconds
+  browser_restart_wait_seconds: 30
+  # Settings for retrying failed downloads
+  retries:
+    # Number of retries for a failed download
+    count: 3
+    # Initial delay between retries, in seconds (increases exponentially)
+    delay_seconds: 10
   # yt-dlp options for downloading
   yt_dlp_opts:
     # Number of fragments to download concurrently
