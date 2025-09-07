@@ -98,7 +98,7 @@ async def process_post(
                 try:
                     await tg_manager.send_media(channel_id, downloaded_files, post_text)
                 except asyncio.CancelledError:
-                    log("⏹️ Отправка прервана пользователем.", indent=4)
+                    log("⏹️ Отправка прервана пользователем.", indent=4, padding_top=1)
                     raise
 
             log("🗑️ Удаляю временные файлы...", indent=4, padding_top=1)

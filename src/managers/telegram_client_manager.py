@@ -1,35 +1,15 @@
 import asyncio
-import sys
-import time
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 from pyrogram.client import Client
 from pyrogram.errors import ChannelPrivate, FloodWait, PeerIdInvalid, RPCError
 from pyrogram.types import InputMedia, InputMediaPhoto, InputMediaVideo, Message
+from tqdm import tqdm
 
 from ..config import settings
 from ..printer import log
-
-
-class _Progress:
-    """Progress bar for sending files to Telegram."""
-
-    def __init__(self) -> None:
-        self.start_time = time.time()
-
-    def __call__(self, current: int, total: int) -> None:
-        now = time.time()
-        elapsed = now - self.start_time
-        speed_bps = current / elapsed if elapsed > 0 else 0.0
-        speed_mbps = speed_bps * 8 / (1024 * 1024)
-        percent = (current / total) * 100 if total else 0.0
-        current_mb = current / (1024 * 1024)
-        total_mb = total / (1024 * 1024) if total else 0.0
-        bar_length = 15
-        filled_length = int(bar_length * current // total) if total else 0
-        bar = "█" * filled_length + "-" * (bar_length - filled_length)
-        sys.stdout.write(f"\r[{bar}] {percent:5.1f}% | {current_mb:.1f} / {total_mb:.1f} МБ | {speed_mbps:.1f} Мбит/с ")
-        sys.stdout.flush()
 
 
 class TelegramClientManager:
@@ -39,6 +19,30 @@ class TelegramClientManager:
         """Initialize the manager with a shutdown event."""
         self.shutdown_event = shutdown_event
         self.app: Client | None = None
+        self.pbar: tqdm[Any] | None = None
+
+    def _create_progress_callback(self, indent: int) -> Callable[[int, int], None]:
+        def _progress_hook(current: int, total: int) -> None:
+            current_mb = current / (1024 * 1024)
+            total_mb = total / (1024 * 1024) if total else 0
+
+            if self.pbar is None:
+                self.pbar = tqdm(
+                    total=total_mb,
+                    unit="MB",
+                    unit_scale=False,
+                    desc="  " * indent + "🚀 ",
+                    ncols=80,
+                    bar_format="{desc}{bar}| {n:.0f} / {total:.0f} {unit} | {elapsed} < {remaining} | {rate_fmt}{postfix}",  # noqa: E501
+                )
+
+            self.pbar.update(current_mb - self.pbar.n)
+
+            if current >= total:
+                self.pbar.close()
+                self.pbar = None
+
+        return _progress_hook
 
     async def start(self) -> None:
         """Start the Telegram client session."""
@@ -94,7 +98,7 @@ class TelegramClientManager:
                     chat_id=channel,
                     video=str(file_path),
                     caption=caption,
-                    progress=_Progress(),
+                    progress=self._create_progress_callback(indent=4),
                 )
                 log(f"✅ Видео '{file_path}' отправлено.", indent=4, padding_top=1)
                 return
@@ -121,7 +125,7 @@ class TelegramClientManager:
                     chat_id=channel,
                     photo=str(file_path),
                     caption=caption,
-                    progress=_Progress(),
+                    progress=self._create_progress_callback(indent=4),
                 )
                 log(f"✅ Фото '{file_path}' отправлено.", indent=4, padding_top=1)
                 return
@@ -167,7 +171,7 @@ class TelegramClientManager:
                             chat_id="me",
                             photo=str(file_path),
                             caption=caption if i == 0 else "",
-                            progress=_Progress(),
+                            progress=self._create_progress_callback(indent=4),
                         )
                         if msg and msg.photo:
                             uploaded_media.append(
@@ -179,7 +183,7 @@ class TelegramClientManager:
                             chat_id="me",
                             video=str(file_path),
                             caption=caption if i == 0 else "",
-                            progress=_Progress(),
+                            progress=self._create_progress_callback(indent=4),
                         )
                         if msg and msg.video:
                             uploaded_media.append(
