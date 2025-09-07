@@ -8,6 +8,7 @@ from src.app import run_app
 from src.managers.telegram_client_manager import TelegramClientManager
 from src.managers.vk_client_manager import VKClientManager
 from src.managers.ytdlp_manager import YtDlpManager
+from src.printer import log
 
 
 async def main(log_level: str) -> None:
@@ -30,14 +31,14 @@ async def main(log_level: str) -> None:
         await ytdlp_manager.start()
         await run_app(shutdown_event, vk_manager, tg_manager, ytdlp_manager, log_level)
     except (KeyboardInterrupt, asyncio.CancelledError):
-        print("\n🧹 Завершение по Ctrl+C или другому прерыванию.")
+        log("\n🧹 Завершение по Ctrl+C или другому прерыванию.")
         shutdown_event.set()
     finally:
-        print("🛑 Останавливаю сервисы...")
+        log("🛑 Останавливаю сервисы...")
         await ytdlp_manager.stop()
         await tg_manager.stop()
         await vk_manager.stop()
-        print("✅ Завершено.")
+        log("✅ Завершено.")
 
 
 if __name__ == "__main__":

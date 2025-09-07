@@ -6,6 +6,7 @@ import yaml
 
 from .config import settings
 from .dto import State
+from .printer import log
 
 
 async def _load_state() -> State:
@@ -30,17 +31,17 @@ async def _save_state(state: State) -> None:
 
 async def get_last_post_id(domain: str) -> int:
     """Reads the last processed post ID for a specific domain from the state file."""
-    print(f"\n💾 Читаю ID последнего поста для {domain} из {settings.app.state_file}...")
+    log(f"💾 Читаю ID последнего поста для {domain} из {settings.app.state_file}...", indent=1)
     state = await _load_state()
     post_id = state.root.get(domain, 0)
-    print(f"✅ ID последнего поста для {domain}: {post_id}")
+    log(f"✅ ID последнего поста для {domain}: {post_id}", indent=1)
     return post_id
 
 
 async def set_last_post_id(domain: str, post_id: int) -> None:
     """Writes the last processed post ID for a specific domain to the state file."""
-    print(f"💾 Записываю ID последнего поста для {domain} в {settings.app.state_file}...")
+    log(f"💾 Записываю ID последнего поста для {domain} в {settings.app.state_file}...", indent=3)
     state = await _load_state()
     state.root[domain] = post_id
     await _save_state(state)
-    print(f"✅ ID последнего поста для {domain} обновлен: {post_id}")
+    log(f"✅ ID последнего поста для {domain} обновлен: {post_id}", indent=3)

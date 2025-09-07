@@ -8,6 +8,7 @@ from pyrogram.errors import ChannelPrivate, FloodWait, PeerIdInvalid, RPCError
 from pyrogram.types import InputMedia, InputMediaPhoto, InputMediaVideo, Message
 
 from ..config import settings
+from ..printer import log
 
 
 class _Progress:
@@ -48,16 +49,16 @@ class TelegramClientManager:
                 api_hash=settings.telegram_api_hash,
             )
             await self.app.start()
-            print("🚀 Telegram Client запущен")
+            log("🚀 Telegram Client запущен", indent=1)
         except asyncio.CancelledError:
-            print("⏹️ Запуск Telegram клиента прерван пользователем.")
+            log("⏹️ Запуск Telegram клиента прерван пользователем.", indent=1)
             raise
 
     async def stop(self) -> None:
         """Stop the Telegram client session."""
         if self.app and self.app.is_connected:
             await self.app.stop()
-            print("🛑 Telegram Client остановлен")
+            log("🛑 Telegram Client остановлен", indent=1)
 
     async def send_media(self, channel: int | str, files: list[Path], caption: str = "", max_retries: int = 3) -> None:
         """
@@ -81,13 +82,13 @@ class TelegramClientManager:
         elif suffix in [".mp4", ".mov", ".mkv"]:
             await self._send_single_video(channel, file_path, caption, max_retries)
         else:
-            print(f"⚠️ Формат {file_path} не поддерживается.")
+            log(f"⚠️ Формат {file_path} не поддерживается.", indent=4)
 
     async def _send_single_video(self, channel: int | str, file_path: Path, caption: str, max_retries: int) -> None:
         attempt = 0
         while attempt < max_retries:
             try:
-                print(f"✈️ Отправка видео (попытка {attempt + 1}/{max_retries})...")
+                log(f"✈️ Отправка видео (попытка {attempt + 1}/{max_retries})...", indent=4, padding_top=1)
                 assert self.app is not None
                 await self.app.send_video(  # type: ignore[reportUnknownMemberType]
                     chat_id=channel,
@@ -95,18 +96,18 @@ class TelegramClientManager:
                     caption=caption,
                     progress=_Progress(),
                 )
-                print(f"\n✅ Видео '{file_path}' отправлено.")
+                log(f"✅ Видео '{file_path}' отправлено.", indent=4, padding_top=1)
                 return
             except FloodWait as e:
                 await self._handle_floodwait(e)
             except (PeerIdInvalid, ChannelPrivate):
-                print(f"⚠️ Канал '{channel}' недоступен.")
+                log(f"⚠️ Канал '{channel}' недоступен.", indent=4)
                 return
             except RPCError as e:
-                print(f"❌ Ошибка API: {e}")
+                log(f"❌ Ошибка API: {e}", indent=4)
                 await self._sleep_cancelable(5)
             except Exception as e:
-                print(f"❌ Неизвестная ошибка: {e}")
+                log(f"❌ Неизвестная ошибка: {e}", indent=4)
                 await self._sleep_cancelable(3)
             attempt += 1
 
@@ -114,7 +115,7 @@ class TelegramClientManager:
         attempt = 0
         while attempt < max_retries:
             try:
-                print(f"✈️ Отправка фото (попытка {attempt + 1}/{max_retries})...")
+                log(f"✈️ Отправка фото (попытка {attempt + 1}/{max_retries})...", indent=4)
                 assert self.app is not None
                 await self.app.send_photo(  # type: ignore[reportUnknownMemberType]
                     chat_id=channel,
@@ -122,20 +123,20 @@ class TelegramClientManager:
                     caption=caption,
                     progress=_Progress(),
                 )
-                print(f"\n✅ Фото '{file_path}' отправлено.")
+                log(f"✅ Фото '{file_path}' отправлено.", indent=4, padding_top=1)
                 return
             except FloodWait as e:
                 await self._handle_floodwait(e)
             except (PeerIdInvalid, ChannelPrivate):
-                print(f"⚠️ Канал '{channel}' недоступен или приватный. Пропускаю.")
+                log(f"⚠️ Канал '{channel}' недоступен или приватный. Пропускаю.", indent=4)
                 return
 
             except RPCError as e:
-                print(f"❌ Ошибка Telegram API: {type(e).__name__} — {e}")
+                log(f"❌ Ошибка Telegram API: {type(e).__name__} — {e}", indent=4)
                 await self._sleep_cancelable(5)
 
             except Exception as e:
-                print(f"❌ Неизвестная ошибка отправки: {e}")
+                log(f"❌ Неизвестная ошибка отправки: {e}", indent=4)
                 await self._sleep_cancelable(3)
 
             attempt += 1
@@ -159,7 +160,7 @@ class TelegramClientManager:
             attempt = 0
             while attempt < max_retries:
                 try:
-                    print(f"⬆️ Загрузка {i + 1}/{len(files)} в Избранное: {file_path.name}")
+                    log(f"⬆️ Загрузка {i + 1}/{len(files)} в Избранное: {file_path.name}", indent=4)
                     msg: Message | None = None
                     if suffix in [".jpg", ".jpeg", ".png", ".webp"]:
                         msg = await self.app.send_photo(  # type: ignore[reportUnknownMemberType]
@@ -185,7 +186,7 @@ class TelegramClientManager:
                                 InputMediaVideo(media=msg.video.file_id, caption=caption if i == 0 else "")
                             )
                     else:
-                        print(f"⚠️ Формат {file_path} не поддерживается для альбомов.")
+                        log(f"⚠️ Формат {file_path} не поддерживается для альбомов.", indent=4)
 
                     if msg and msg.id:
                         temp_message_ids.append(msg.id)
@@ -194,28 +195,28 @@ class TelegramClientManager:
                 except FloodWait as e:
                     await self._handle_floodwait(e)
                 except RPCError as e:
-                    print(f"❌ Ошибка Telegram API: {type(e).__name__} — {e}")
+                    log(f"❌ Ошибка Telegram API: {type(e).__name__} — {e}", indent=4)
                     await self._sleep_cancelable(5)
                 except Exception as e:
-                    print(f"❌ Неизвестная ошибка отправки: {e}")
+                    log(f"❌ Неизвестная ошибка отправки: {e}", indent=4)
                     await self._sleep_cancelable(3)
                 attempt += 1
 
         if len(uploaded_media) > 1:
-            print("📦 Формирование альбома...")
+            log("📦 Формирование альбома...", indent=4)
             await self.app.send_media_group(chat_id=channel, media=uploaded_media)  # type: ignore[reportGeneralTypeIssues]
-            print("✅ Альбом отправлен в канал.")
+            log("✅ Альбом отправлен в канал.", indent=4)
 
         if temp_message_ids:
             try:
                 await self.app.delete_messages(chat_id="me", message_ids=temp_message_ids)
-                print("🧹 Временные сообщения из Избранного удалены.")
+                log("🧹 Временные сообщения из Избранного удалены.", indent=4)
             except Exception as e:
-                print(f"⚠️ Не удалось удалить временные сообщения: {e}")
+                log(f"⚠️ Не удалось удалить временные сообщения: {e}", indent=4)
 
     async def _handle_floodwait(self, e: FloodWait) -> None:
         wait_time = e.value if isinstance(e.value, int) else 60
-        print(f"⏳ FloodWait: жду {wait_time + 1} секунд...")
+        log(f"⏳ FloodWait: жду {wait_time + 1} секунд...", indent=4)
         await self._sleep_cancelable(wait_time + 1)
 
     async def _sleep_cancelable(self, seconds: int) -> None:

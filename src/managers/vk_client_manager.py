@@ -6,6 +6,7 @@ import httpx
 from ..cleaner import normalize_links
 from ..config import settings
 from ..dto import Post, WallGetResponse
+from ..printer import log
 
 
 class VKClientManager:
@@ -20,15 +21,15 @@ class VKClientManager:
             self.client = httpx.AsyncClient(
                 timeout=httpx.Timeout(10.0, connect=5.0), http2=True, headers={"User-Agent": "PostBridgeBot/1.0"}
             )
-            print("🚀 VK Client запущен")
+            log("🚀 VK Client запущен", indent=1)
         except asyncio.CancelledError:
-            print("⏹️ Запуск VK клиента прерван пользователем.")
+            log("⏹️ Запуск VK клиента прерван пользователем.", indent=1)
             raise
 
     async def stop(self) -> None:
         if self.client:
             await self.client.aclose()
-        print("🛑 VK Client остановлен")
+        log("🛑 VK Client остановлен", indent=1)
 
     async def get_vk_wall(self, domain: str, post_count: int, post_source: str) -> list[Post]:
         """Requests posts from a VK wall (or Donut) with retry and cancellation on shutdown_event."""
@@ -45,9 +46,9 @@ class VKClientManager:
         }
         if post_source == "donut":
             params["filter"] = "donut"
-            print(f"🔍 Собираю посты из VK Donut: {domain}...")
+            log(f"🔍 Собираю посты из VK Donut: {domain}...", indent=2)
         else:
-            print(f"🔍 Собираю посты со стены: {domain}...")
+            log(f"🔍 Собираю посты со стены: {domain}...", indent=2)
 
         delay = 2
         for attempt in range(3):
@@ -71,12 +72,12 @@ class VKClientManager:
                 return posts
 
             except asyncio.CancelledError:
-                print("⏹️ Запрос к VK API прерван пользователем.")
+                log("⏹️ Запрос к VK API прерван пользователем.", indent=3)
                 raise
 
             except Exception as e:
                 if attempt < 2:
-                    print(f"❌ Ошибка VK API: {e}. Повтор через {delay} c...")
+                    log(f"❌ Ошибка VK API: {e}. Повтор через {delay} c...", indent=3)
                     await self._sleep_cancelable(delay)
                     delay *= 2
                 else:

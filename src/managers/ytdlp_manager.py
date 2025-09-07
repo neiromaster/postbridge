@@ -11,6 +11,7 @@ import psutil
 import yt_dlp
 
 from ..config import settings
+from ..printer import log
 
 BROWSER_EXECUTABLES = (
     {
@@ -48,17 +49,17 @@ class YtDlpManager:
 
     async def start(self) -> None:
         """Prepare the manager for downloading."""
-        print("🚀 YtDlp Manager готов к работе")
+        log("🚀 YtDlp Manager готов к работе", indent=1)
 
     async def stop(self) -> None:
         """Terminate any active download process."""
         await self._terminate_active()
-        print("🛑 YtDlp Manager остановлен")
+        log("🛑 YtDlp Manager остановлен", indent=1)
 
     async def _terminate_active(self) -> None:
         proc = self._active_proc
         if proc and proc.is_alive():
-            print("🛑 Прерываю активную загрузку yt-dlp...")
+            log("🛑 Прерываю активную загрузку yt-dlp...", indent=2)
             proc.terminate()
             for _ in range(20):
                 if not proc.is_alive():
@@ -74,10 +75,10 @@ class YtDlpManager:
         browser_name = settings.downloader.browser
         executable = BROWSER_EXECUTABLES.get(browser_name)
         if not executable:
-            print(f"⚠️ Браузер {browser_name} не поддерживается для перезапуска.")
+            log(f"⚠️ Браузер {browser_name} не поддерживается для перезапуска.", indent=4)
             return
 
-        print(f"🔄 Перезапускаю {browser_name} для обновления cookie...")
+        log(f"🔄 Перезапускаю {browser_name} для обновления cookie...", indent=4)
 
         for proc in psutil.process_iter(["name"]):  # type: ignore [reportUnknownMemberType, reportUnknownArgumentType])
             if proc.info["name"] == executable:
@@ -93,7 +94,7 @@ class YtDlpManager:
                 await asyncio.to_thread(proc.wait)
                 break
 
-        print("✅ Перезапуск завершен.")
+        log("✅ Перезапуск завершен.", indent=4)
 
     async def download_video(self, video_url: str) -> Path | None:
         """
@@ -122,10 +123,10 @@ class YtDlpManager:
 
         for attempt in range(retries):
             if self.shutdown_event.is_set():
-                print("⏹️ Загрузка отменена пользователем.")
+                log("⏹️ Загрузка отменена пользователем.", indent=4)
                 raise asyncio.CancelledError()
 
-            print(f"📥 Скачиваю видео (попытка {attempt + 1}/{retries})...")
+            log(f"📥 Скачиваю видео (попытка {attempt + 1}/{retries})...", indent=4)
             out_q: Queue[str] = Queue()
             proc = Process(target=_ytdlp_worker, args=(video_url, ydl_opts, out_q), daemon=True)
             proc.start()
@@ -134,15 +135,15 @@ class YtDlpManager:
             try:
                 downloaded_file = await self._wait_for_result_or_shutdown(proc, out_q)
                 if downloaded_file:
-                    print(f"✅ Видео скачано: {downloaded_file}")
+                    log(f"✅ Видео скачано: {downloaded_file}", indent=4)
                     return Path(downloaded_file)
 
             except asyncio.CancelledError:
                 await self._terminate_active()
-                print("⏹️ Загрузка отменена (CancelledError).")
+                log("⏹️ Загрузка отменена (CancelledError).", indent=4)
                 raise
             except Exception as e:
-                print(f"❌ Ошибка скачивания: {e}")
+                log(f"❌ Ошибка скачивания: {e}", indent=4)
 
                 if "This video is only available for registered users" in str(e) and attempt < retries - 1:
                     await self.restart_browser()
@@ -151,10 +152,10 @@ class YtDlpManager:
                 await self._terminate_active()
                 if attempt < retries - 1 and not self.shutdown_event.is_set():
                     current_delay = base_delay * (2**attempt)
-                    print(f"⏳ Пауза {current_delay} секунд перед следующей попыткой...")
+                    log(f"⏳ Пауза {current_delay} секунд перед следующей попыткой...", indent=4)
                     await self._sleep_cancelable(current_delay)
 
-        print(f"❌ Не удалось скачать видео после {retries} попыток.")
+        log(f"❌ Не удалось скачать видео после {retries} попыток.", indent=4)
         return None
 
     async def _wait_for_result_or_shutdown(self, proc: Process, out_q: Queue[str]) -> str | None:
