@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import multiprocessing
 import signal
 import sys
 
@@ -40,6 +41,7 @@ async def main(log_level: str) -> None:
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     parser = argparse.ArgumentParser(description="VK to Telegram Bot")
     parser.add_argument(
         "--log-level",
