@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 from datetime import datetime
+from pathlib import Path
 
 from .config import settings
 from .dto import Post
@@ -48,7 +49,10 @@ async def run_app(
                         last_known_id = post.id
 
             print(f"\n🏁 Цикл завершен. Пауза {settings.app.wait_time_seconds} секунд...")
-            await asyncio.sleep(settings.app.wait_time_seconds)
+            try:
+                await asyncio.sleep(settings.app.wait_time_seconds)
+            except asyncio.CancelledError as e:
+                raise GracefulShutdown() from e
 
     except GracefulShutdown:
         print("🛑 Получен сигнал на завершение — выходим из run_app.")
@@ -64,7 +68,7 @@ async def process_post(
 ) -> None:
     print(f"\n📄 Обрабатываю пост ID: {post.id} из {domain}...")
     post_text: str = post.text or ""
-    video_url: str | None = None
+    video_urls: list[str] = []
 
     if post.attachments:
         for attachment in post.attachments:
@@ -72,38 +76,41 @@ async def process_post(
                 video = attachment.video
                 access_key_part = f"?access_key={video.access_key}" if video.access_key else ""
                 video_url = f"https://vk.com/video{video.owner_id}_{video.id}{access_key_part}"
-                print(f"📹 Найдено видео: {video_url}")
-                break
+                video_urls.append(video_url)
 
-    if video_url:
-        try:
-            downloaded_file_path = await ytdlp_manager.download_video(video_url)
-        except asyncio.CancelledError as e:
-            print("⏹️ Загрузка прервана пользователем.")
-            raise GracefulShutdown() from e
-
-        if shutdown_event.is_set():
-            print("⏹️ Остановка запрошена — прерываю обработку поста.")
-            raise GracefulShutdown()
-
-        if not downloaded_file_path:
-            print("❌ Не удалось скачать видео. Перехожу к следующему посту.")
-            return
-
-        for channel_id in channel_ids:
+    if video_urls:
+        print(f"📹 Найдено {len(video_urls)} видео в посте.")
+        downloaded_files: list[Path] = []
+        for video_url in video_urls:
+            print(f"📹 Скачиваю видео: {video_url}")
             try:
-                await tg_manager.send_video(channel_id, downloaded_file_path, post_text)
+                downloaded_file_path = await ytdlp_manager.download_video(video_url)
+                if downloaded_file_path:
+                    downloaded_files.append(downloaded_file_path)
             except asyncio.CancelledError as e:
-                print("⏹️ Отправка прервана пользователем.")
+                print("⏹️ Загрузка прервана пользователем.")
                 raise GracefulShutdown() from e
 
-        print("🗑️ Удаляю временный файл...")
-        try:
-            await asyncio.to_thread(os.remove, downloaded_file_path)
-            print("✅ Файл удален.")
-        except FileNotFoundError:
-            print("⚠️ Файл уже удалён или не найден.")
-        except Exception as e:
-            print(f"❌ Ошибка удаления файла: {e}")
+            if shutdown_event.is_set():
+                print("⏹️ Остановка запрошена — прерываю обработку поста.")
+                raise GracefulShutdown()
+
+        if downloaded_files:
+            for channel_id in channel_ids:
+                try:
+                    await tg_manager.send_media(channel_id, downloaded_files, post_text)
+                except asyncio.CancelledError as e:
+                    print("⏹️ Отправка прервана пользователем.")
+                    raise GracefulShutdown() from e
+
+            print("🗑️ Удаляю временные файлы...")
+            for file_path in downloaded_files:
+                try:
+                    await asyncio.to_thread(os.remove, file_path)
+                    print(f"✅ Файл {file_path} удален.")
+                except FileNotFoundError:
+                    print(f"⚠️ Файл {file_path} уже удалён или не найден.")
+                except Exception as e:
+                    print(f"❌ Ошибка удаления файла {file_path}: {e}")
     else:
         print("🤷‍♂️ Видео в посте не найдено, пропускаю.")
