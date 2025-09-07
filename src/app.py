@@ -3,6 +3,9 @@ import logging
 import os
 from datetime import datetime
 from pathlib import Path
+from typing import TypedDict, cast
+
+from pydantic import HttpUrl
 
 from .config import settings
 from .dto import Post
@@ -11,6 +14,19 @@ from .managers.vk_client_manager import VKClientManager
 from .managers.ytdlp_manager import YtDlpManager
 from .printer import log
 from .state_manager import get_last_post_id, set_last_post_id
+
+
+class VideoItem(TypedDict):
+    type: str
+    url: str
+
+
+class PhotoItem(TypedDict):
+    type: str
+    url: HttpUrl
+
+
+MediaItem = VideoItem | PhotoItem
 
 
 async def run_app(
@@ -44,13 +60,18 @@ async def run_app(
                 if new_posts:
                     log(f"✅ Найдено {len(new_posts)} новых постов в {domain}.", indent=2)
                     for post in sorted(new_posts, key=lambda p: p.id):
-                        await process_post(post, domain, channel_ids, shutdown_event, ytdlp_manager, tg_manager)
+                        await process_post(
+                            post, domain, channel_ids, shutdown_event, vk_manager, ytdlp_manager, tg_manager
+                        )
                         await set_last_post_id(domain, post.id)
                         last_known_id = post.id
 
             log(f"🏁 Цикл завершен. Пауза {settings.app.wait_time_seconds} секунд...", padding_top=1)
 
-            await asyncio.sleep(settings.app.wait_time_seconds)
+            try:
+                await asyncio.sleep(settings.app.wait_time_seconds)
+            except asyncio.CancelledError:
+                break
 
     except asyncio.CancelledError:
         log("🛑 Получен сигнал на завершение — выходим из run_app.", padding_top=1)
@@ -61,37 +82,52 @@ async def process_post(
     domain: str,
     channel_ids: list[str],
     shutdown_event: asyncio.Event,
+    vk_manager: VKClientManager,
     ytdlp_manager: YtDlpManager,
     tg_manager: TelegramClientManager,
 ) -> None:
     log(f"📄 Обрабатываю пост ID: {post.id} из {domain}...", indent=2, padding_top=1)
     post_text: str = post.text or ""
-    video_urls: list[str] = []
 
+    media_items: list[MediaItem] = []
     if post.attachments:
         for attachment in post.attachments:
             if attachment.type == "video" and attachment.video:
                 video = attachment.video
                 access_key_part = f"?access_key={video.access_key}" if video.access_key else ""
                 video_url = f"https://vk.com/video{video.owner_id}_{video.id}{access_key_part}"
-                video_urls.append(video_url)
+                media_items.append({"type": "video", "url": video_url})
+            elif attachment.type == "photo" and attachment.photo:
+                photo_url = attachment.photo.max_size_url
+                media_items.append({"type": "photo", "url": photo_url})
 
-    if video_urls:
-        log(f"📹 Найдено {len(video_urls)} видео в посте.", indent=3)
+    if media_items:
+        photo_count = sum(1 for item in media_items if item["type"] == "photo")
+        video_count = sum(1 for item in media_items if item["type"] == "video")
+        log(f"🖼️ Найдено {photo_count} фото и {video_count} видео в посте.", indent=3)
+
         downloaded_files: list[Path] = []
-        for video_url in video_urls:
-            log(f"📹 Скачиваю видео: {video_url}", indent=4)
+        for item in media_items:
             try:
-                downloaded_file_path = await ytdlp_manager.download_video(video_url)
+                if shutdown_event.is_set():
+                    raise asyncio.CancelledError()
+
+                downloaded_file_path = None
+                if item["type"] == "video":
+                    video_item = cast(VideoItem, item)
+                    log(f"📹 Скачиваю видео: {video_item['url']}", indent=4)
+                    downloaded_file_path = await ytdlp_manager.download_video(video_item["url"])
+                elif item["type"] == "photo":
+                    photo_item = cast(PhotoItem, item)
+                    log(f"📸 Скачиваю фото: {photo_item['url']}", indent=4)
+                    downloaded_file_path = await vk_manager.download_photo(photo_item["url"])
+
                 if downloaded_file_path:
                     downloaded_files.append(downloaded_file_path)
+
             except asyncio.CancelledError:
                 log("⏹️ Загрузка прервана пользователем.", indent=4)
                 raise
-
-            if shutdown_event.is_set():
-                log("⏹️ Остановка запрошена — прерываю обработку поста.", indent=4)
-                raise asyncio.CancelledError()
 
         if downloaded_files:
             for channel_id in channel_ids:
@@ -111,4 +147,4 @@ async def process_post(
                 except Exception as e:
                     log(f"❌ Ошибка удаления файла {file_path}: {e}", indent=4)
     else:
-        log("🤷‍♂️ Видео в посте не найдено, пропускаю.", indent=3)
+        log("🤷‍♂️ Медиа в посте не найдено, пропускаю.", indent=3)

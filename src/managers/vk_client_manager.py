@@ -1,7 +1,10 @@
 import asyncio
+from pathlib import Path
 from typing import Any
 
+import anyio
 import httpx
+from pydantic import HttpUrl
 
 from ..cleaner import normalize_links
 from ..config import settings
@@ -30,6 +33,40 @@ class VKClientManager:
         if self.client:
             await self.client.aclose()
         log("🛑 VK Client остановлен", indent=1)
+
+    async def download_photo(self, url: HttpUrl) -> Path | None:
+        """Downloads a photo from a given URL and saves it to the downloads directory."""
+        if self.shutdown_event.is_set():
+            raise asyncio.CancelledError()
+        assert self.client is not None, "VKClientManager is not started"
+
+        if not url.path:
+            log(f"❌ Не удалось получить путь из URL: {url}", indent=4)
+            return None
+        file_name = Path(url.path).name
+        save_path = Path("downloads") / file_name
+        save_path.parent.mkdir(exist_ok=True)
+
+        try:
+            async with self.client.stream("GET", str(url)) as response:
+                response.raise_for_status()
+                async with await anyio.open_file(save_path, "wb") as f:
+                    async for chunk in response.aiter_bytes():
+                        if self.shutdown_event.is_set():
+                            raise asyncio.CancelledError()
+                        await f.write(chunk)
+            log(f"✅ Фотография сохранена: {save_path}", indent=4)
+            return save_path
+        except asyncio.CancelledError:
+            log("⏹️ Загрузка фотографии прервана.", indent=4)
+            if save_path.exists():
+                save_path.unlink()
+            raise
+        except Exception as e:
+            log(f"❌ Не удалось скачать фотографию: {e}", indent=4)
+            if save_path.exists():
+                save_path.unlink()
+            return None
 
     async def get_vk_wall(self, domain: str, post_count: int, post_source: str) -> list[Post]:
         """Requests posts from a VK wall (or Donut) with retry and cancellation on shutdown_event."""
