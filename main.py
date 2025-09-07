@@ -23,14 +23,13 @@ async def main(log_level: str) -> None:
     tg_manager = TelegramClientManager(shutdown_event)
     ytdlp_manager = YtDlpManager(shutdown_event)
 
-    await vk_manager.start()
-    await tg_manager.start()
-    await ytdlp_manager.start()
-
     try:
+        await vk_manager.start()
+        await tg_manager.start()
+        await ytdlp_manager.start()
         await run_app(shutdown_event, vk_manager, tg_manager, ytdlp_manager, log_level)
-    except KeyboardInterrupt:
-        print("\n🧹 Завершение по Ctrl+C.")
+    except (KeyboardInterrupt, asyncio.CancelledError):
+        print("\n🧹 Завершение по Ctrl+C или другому прерыванию.")
         shutdown_event.set()
     finally:
         print("🛑 Останавливаю сервисы...")

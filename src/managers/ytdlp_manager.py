@@ -11,7 +11,6 @@ import psutil
 import yt_dlp
 
 from ..config import settings
-from ..exceptions import GracefulShutdown
 
 BROWSER_EXECUTABLES = (
     {
@@ -102,7 +101,7 @@ class YtDlpManager:
         Guaranteed to stop on shutdown or cancellation.
         """
         if self.shutdown_event.is_set():
-            raise GracefulShutdown()
+            raise asyncio.CancelledError()
 
         out_dir = Path(settings.downloader.output_path)
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -124,7 +123,7 @@ class YtDlpManager:
         for attempt in range(retries):
             if self.shutdown_event.is_set():
                 print("⏹️ Загрузка отменена пользователем.")
-                raise GracefulShutdown()
+                raise asyncio.CancelledError()
 
             print(f"📥 Скачиваю видео (попытка {attempt + 1}/{retries})...")
             out_q: Queue[str] = Queue()
@@ -137,12 +136,11 @@ class YtDlpManager:
                 if downloaded_file:
                     print(f"✅ Видео скачано: {downloaded_file}")
                     return Path(downloaded_file)
-                else:
-                    raise GracefulShutdown()
-            except asyncio.CancelledError as e:
+
+            except asyncio.CancelledError:
                 await self._terminate_active()
                 print("⏹️ Загрузка отменена (CancelledError).")
-                raise GracefulShutdown() from e
+                raise
             except Exception as e:
                 print(f"❌ Ошибка скачивания: {e}")
 

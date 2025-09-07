@@ -6,7 +6,6 @@ import httpx
 from ..cleaner import normalize_links
 from ..config import settings
 from ..dto import Post, WallGetResponse
-from ..exceptions import GracefulShutdown
 
 
 class VKClientManager:
@@ -22,9 +21,9 @@ class VKClientManager:
                 timeout=httpx.Timeout(10.0, connect=5.0), http2=True, headers={"User-Agent": "PostBridgeBot/1.0"}
             )
             print("🚀 VK Client запущен")
-        except asyncio.CancelledError as e:
+        except asyncio.CancelledError:
             print("⏹️ Запуск VK клиента прерван пользователем.")
-            raise GracefulShutdown() from e
+            raise
 
     async def stop(self) -> None:
         if self.client:
@@ -34,7 +33,7 @@ class VKClientManager:
     async def get_vk_wall(self, domain: str, post_count: int, post_source: str) -> list[Post]:
         """Requests posts from a VK wall (or Donut) with retry and cancellation on shutdown_event."""
         if self.shutdown_event.is_set():
-            raise GracefulShutdown()
+            raise asyncio.CancelledError()
 
         assert self.client is not None, "VKClientManager не запущен"
 
@@ -53,12 +52,12 @@ class VKClientManager:
         delay = 2
         for attempt in range(3):
             if self.shutdown_event.is_set():
-                raise GracefulShutdown()
+                raise asyncio.CancelledError()
 
             try:
                 response = await self.client.get("https://api.vk.com/method/wall.get", params=params)
                 if self.shutdown_event.is_set():
-                    raise GracefulShutdown()
+                    raise asyncio.CancelledError()
 
                 response.raise_for_status()
                 data = response.json()
@@ -71,9 +70,9 @@ class VKClientManager:
                         post.text = normalize_links(post.text)
                 return posts
 
-            except asyncio.CancelledError as e:
+            except asyncio.CancelledError:
                 print("⏹️ Запрос к VK API прерван пользователем.")
-                raise GracefulShutdown() from e
+                raise
 
             except Exception as e:
                 if attempt < 2:
@@ -90,6 +89,6 @@ class VKClientManager:
         step = 0.25
         while remaining > 0:
             if self.shutdown_event.is_set():
-                raise GracefulShutdown()
+                raise asyncio.CancelledError()
             await asyncio.sleep(step)
             remaining -= step

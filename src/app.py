@@ -6,7 +6,6 @@ from pathlib import Path
 
 from .config import settings
 from .dto import Post
-from .exceptions import GracefulShutdown
 from .managers.telegram_client_manager import TelegramClientManager
 from .managers.vk_client_manager import VKClientManager
 from .managers.ytdlp_manager import YtDlpManager
@@ -49,12 +48,10 @@ async def run_app(
                         last_known_id = post.id
 
             print(f"\n🏁 Цикл завершен. Пауза {settings.app.wait_time_seconds} секунд...")
-            try:
-                await asyncio.sleep(settings.app.wait_time_seconds)
-            except asyncio.CancelledError as e:
-                raise GracefulShutdown() from e
 
-    except GracefulShutdown:
+            await asyncio.sleep(settings.app.wait_time_seconds)
+
+    except asyncio.CancelledError:
         print("🛑 Получен сигнал на завершение — выходим из run_app.")
 
 
@@ -87,21 +84,21 @@ async def process_post(
                 downloaded_file_path = await ytdlp_manager.download_video(video_url)
                 if downloaded_file_path:
                     downloaded_files.append(downloaded_file_path)
-            except asyncio.CancelledError as e:
+            except asyncio.CancelledError:
                 print("⏹️ Загрузка прервана пользователем.")
-                raise GracefulShutdown() from e
+                raise
 
             if shutdown_event.is_set():
                 print("⏹️ Остановка запрошена — прерываю обработку поста.")
-                raise GracefulShutdown()
+                raise asyncio.CancelledError()
 
         if downloaded_files:
             for channel_id in channel_ids:
                 try:
                     await tg_manager.send_media(channel_id, downloaded_files, post_text)
-                except asyncio.CancelledError as e:
+                except asyncio.CancelledError:
                     print("⏹️ Отправка прервана пользователем.")
-                    raise GracefulShutdown() from e
+                    raise
 
             print("🗑️ Удаляю временные файлы...")
             for file_path in downloaded_files:

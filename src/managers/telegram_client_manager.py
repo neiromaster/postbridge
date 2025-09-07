@@ -8,7 +8,6 @@ from pyrogram.errors import ChannelPrivate, FloodWait, PeerIdInvalid, RPCError
 from pyrogram.types import InputMedia, InputMediaPhoto, InputMediaVideo, Message
 
 from ..config import settings
-from ..exceptions import GracefulShutdown
 
 
 class _Progress:
@@ -50,13 +49,13 @@ class TelegramClientManager:
             )
             await self.app.start()
             print("🚀 Telegram Client запущен")
-        except asyncio.CancelledError as e:
+        except asyncio.CancelledError:
             print("⏹️ Запуск Telegram клиента прерван пользователем.")
-            raise GracefulShutdown() from e
+            raise
 
     async def stop(self) -> None:
         """Stop the Telegram client session."""
-        if self.app:
+        if self.app and self.app.is_connected:
             await self.app.stop()
             print("🛑 Telegram Client остановлен")
 
@@ -142,7 +141,11 @@ class TelegramClientManager:
             attempt += 1
 
     async def _send_album_via_saved(
-        self, channel: int | str, files: list[Path], caption: str, max_retries: int
+        self,
+        channel: int | str,
+        files: list[Path],
+        caption: str,
+        max_retries: int,
     ) -> None:
         """
         Uploads the media to Favorites with progress, then sends the album to the channel.
@@ -220,6 +223,6 @@ class TelegramClientManager:
         step = 0.25
         while remaining > 0:
             if self.shutdown_event.is_set():
-                raise GracefulShutdown()
+                raise asyncio.CancelledError()
             await asyncio.sleep(step)
             remaining -= step
