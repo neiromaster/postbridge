@@ -54,7 +54,12 @@ async def run_app(
                 last_known_id = await get_last_post_id(domain)
                 log(f"📄 Проверяю группу {domain}...", indent=1, padding_top=1)
 
-                wall_posts = await vk_manager.get_vk_wall(domain, post_count, post_source)
+                try:
+                    wall_posts = await vk_manager.get_vk_wall(domain, post_count, post_source)
+                except httpx.ConnectTimeout:
+                    log(f"❌ Ошибка подключения к VK API при проверке {domain}. Пропускаю итерацию.", indent=2)
+                    continue
+
                 new_posts = [p for p in wall_posts if p.id > last_known_id]
 
                 if new_posts:
