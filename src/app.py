@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TypedDict, cast
 
+import httpx
 from pydantic import HttpUrl
 
 from .config import settings
@@ -64,12 +65,19 @@ async def run_app(
 
                 if new_posts:
                     log(f"✅ Найдено {len(new_posts)} новых постов в {domain}.", indent=2)
-                    for post in sorted(new_posts, key=lambda p: p.id):
-                        await process_post(
-                            post, domain, channel_ids, shutdown_event, vk_manager, ytdlp_manager, tg_manager
+                    try:
+                        for post in sorted(new_posts, key=lambda p: p.id):
+                            await process_post(
+                                post, domain, channel_ids, shutdown_event, vk_manager, ytdlp_manager, tg_manager
+                            )
+                            await set_last_post_id(domain, post.id)
+                            last_known_id = post.id
+                    except Exception as e:
+                        log(
+                            f"❌ Ошибка обработки для {binding.vk.domain}: {e}. Пропускаю этот binding.",
+                            indent=1,
                         )
-                        await set_last_post_id(domain, post.id)
-                        last_known_id = post.id
+                        continue
 
             log(f"🏁 Цикл завершен. Пауза {settings.app.wait_time_seconds} секунд...", padding_top=1)
 
@@ -129,6 +137,8 @@ async def process_post(
 
                 if downloaded_file_path:
                     downloaded_files.append(downloaded_file_path)
+                else:
+                    raise RuntimeError(f"Не удалось скачать медиафайл: {item['url']}")
 
             except asyncio.CancelledError:
                 log("⏹️ Загрузка прервана пользователем.", indent=4)
