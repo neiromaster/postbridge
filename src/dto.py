@@ -36,7 +36,7 @@ class Video(BaseModel):
 
 
 class Attachment(BaseModel):
-    type: Literal["photo", "video", "doc", "link", "poll", "audio", "graffiti"]
+    type: Literal["photo", "video", "doc", "link", "poll", "audio", "graffiti", "donut_link"]
     photo: Photo | None = None
     video: Video | None = None
     doc: dict[str, Any] | None = None
@@ -44,6 +44,7 @@ class Attachment(BaseModel):
     poll: dict[str, Any] | None = None
     audio: dict[str, Any] | None = None
     graffiti: dict[str, Any] | None = None
+    donut_link: dict[str, Any] | None = None
 
 
 class Post(BaseModel):
