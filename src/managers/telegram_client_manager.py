@@ -3,6 +3,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from moviepy import VideoFileClip
 from pyrogram.client import Client
 from pyrogram.errors import ChannelPrivate, FloodWait, PeerIdInvalid, RPCError
 from pyrogram.types import InputMedia, InputMediaPhoto, InputMediaVideo, Message
@@ -94,11 +95,15 @@ class TelegramClientManager:
             try:
                 log(f"✈️ Отправка видео (попытка {attempt + 1}/{max_retries})...", indent=4, padding_top=1)
                 assert self.app is not None
+                clip = VideoFileClip(str(file_path))
+
                 await self.app.send_video(  # type: ignore[reportUnknownMemberType]
                     chat_id=channel,
                     video=str(file_path),
                     caption=caption,
                     progress=self._create_progress_callback(indent=4),
+                    width=int(clip.w),
+                    height=int(clip.h),
                 )
                 log(f"✅ Видео '{file_path}' отправлено.", indent=4, padding_top=1)
                 return
@@ -179,11 +184,15 @@ class TelegramClientManager:
                             )
 
                     elif suffix in [".mp4", ".mov", ".mkv"]:
+                        clip = VideoFileClip(str(file_path))
+
                         msg = await self.app.send_video(  # type: ignore[reportUnknownMemberType]
                             chat_id="me",
                             video=str(file_path),
                             caption=caption if i == 0 else "",
                             progress=self._create_progress_callback(indent=4),
+                            width=int(clip.w),
+                            height=int(clip.h),
                         )
                         if msg and msg.video:
                             uploaded_media.append(
