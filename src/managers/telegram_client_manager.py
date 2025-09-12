@@ -3,7 +3,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from moviepy import VideoFileClip
+from moviepy import VideoFileClip  # type: ignore
 from pyrogram.client import Client
 from pyrogram.errors import ChannelPrivate, FloodWait, PeerIdInvalid, RPCError
 from pyrogram.types import InputMedia, InputMediaPhoto, InputMediaVideo, Message
@@ -102,8 +102,8 @@ class TelegramClientManager:
                     video=str(file_path),
                     caption=caption,
                     progress=self._create_progress_callback(indent=4),
-                    width=int(clip.w),
-                    height=int(clip.h),
+                    width=int(clip.w),  # type: ignore[attr-defined]
+                    height=int(clip.h),  # type: ignore[attr-defined]
                 )
                 log(f"✅ Видео '{file_path}' отправлено.", indent=4, padding_top=1)
                 return
@@ -191,8 +191,8 @@ class TelegramClientManager:
                             video=str(file_path),
                             caption=caption if i == 0 else "",
                             progress=self._create_progress_callback(indent=4),
-                            width=int(clip.w),
-                            height=int(clip.h),
+                            width=int(clip.w),  # type: ignore[attr-defined]
+                            height=int(clip.h),  # type: ignore[attr-defined]
                         )
                         if msg and msg.video:
                             uploaded_media.append(

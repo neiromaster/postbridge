@@ -17,6 +17,7 @@
     "reportUnnecessaryComparison": true,
     "reportUnnecessaryContains": true,
     "reportUnnecessaryIsInstance": true,
+    "useLibraryCodeForTypes": true,
     "exclude": [
         "**/__pycache__",
         "**/.venv",
