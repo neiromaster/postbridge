@@ -95,16 +95,16 @@ class TelegramClientManager:
             try:
                 log(f"✈️ Отправка видео (попытка {attempt + 1}/{max_retries})...", indent=4, padding_top=1)
                 assert self.app is not None
-                clip = VideoFileClip(str(file_path))
+                with VideoFileClip(str(file_path)) as clip:
+                    await self.app.send_video(  # type: ignore[reportUnknownMemberType]
+                        chat_id=channel,
+                        video=str(file_path),
+                        caption=caption,
+                        progress=self._create_progress_callback(indent=4),
+                        width=int(clip.w),  # type: ignore[attr-defined]
+                        height=int(clip.h),  # type: ignore[attr-defined]
+                    )
 
-                await self.app.send_video(  # type: ignore[reportUnknownMemberType]
-                    chat_id=channel,
-                    video=str(file_path),
-                    caption=caption,
-                    progress=self._create_progress_callback(indent=4),
-                    width=int(clip.w),  # type: ignore[attr-defined]
-                    height=int(clip.h),  # type: ignore[attr-defined]
-                )
                 log(f"✅ Видео '{file_path}' отправлено.", indent=4, padding_top=1)
                 return
             except FloodWait as e:
@@ -184,16 +184,15 @@ class TelegramClientManager:
                             )
 
                     elif suffix in [".mp4", ".mov", ".mkv"]:
-                        clip = VideoFileClip(str(file_path))
-
-                        msg = await self.app.send_video(  # type: ignore[reportUnknownMemberType]
-                            chat_id="me",
-                            video=str(file_path),
-                            caption=caption if i == 0 else "",
-                            progress=self._create_progress_callback(indent=4),
-                            width=int(clip.w),  # type: ignore[attr-defined]
-                            height=int(clip.h),  # type: ignore[attr-defined]
-                        )
+                        with VideoFileClip(str(file_path)) as clip:
+                            msg = await self.app.send_video(  # type: ignore[reportUnknownMemberType]
+                                chat_id="me",
+                                video=str(file_path),
+                                caption=caption if i == 0 else "",
+                                progress=self._create_progress_callback(indent=4),
+                                width=int(clip.w),  # type: ignore[attr-defined]
+                                height=int(clip.h),  # type: ignore[attr-defined]
+                            )
                         if msg and msg.video:
                             uploaded_media.append(
                                 InputMediaVideo(media=msg.video.file_id, caption=caption if i == 0 else "")
